@@ -1,64 +1,198 @@
-# Deployment plan — Hetzner Cloud
+# Deployment runbook — Hetzner Cloud + Namecheap
 
-**Status:** local Docker Compose config exists (`docker-compose.yml`) with MySQL 8, Redis 7, Mailpit. Production Dockerfile, nginx config, and Hetzner provisioning scripts are deferred to the deployment phase.
+**Target host:** Hetzner Cloud CX22 (2 vCPU / 4 GB / 40 GB), Falkenstein, Germany, Ubuntu 24.04 LTS.
+**Domain:** malawiadventistmusic.com (Namecheap).
 
-## Target topology
+The whole stack runs on one box under Docker Compose. Everything except nginx listens on private container networks.
 
 ```
 Internet
    │
-   ▼
-Hetzner Firewall (22 SSH allow-list, 80/443 open)
+   ▼   HTTPS
+Hetzner Firewall (22 SSH, 80/443 HTTP(S) open)
    │
    ▼
-Hetzner Cloud Server (CX22 or CX32 — Ubuntu 24.04 LTS)
+[ nginx :80 :443 ] ← Let's Encrypt (certbot sidecar)
    │
-   ▼
-Docker Compose stack:
-   - nginx           :80 :443
-   - app (php-fpm)   internal
-   - queue-worker    internal
-   - scheduler       internal
-   - mysql           127.0.0.1:3306 (not exposed publicly)
-   - redis           127.0.0.1:6379 (not exposed publicly)
+   ▼   fastcgi
+[ app (php-fpm) ] ─── [ queue-worker ] ─── [ scheduler ]
+   │      │      │
+   │      ▼      ▼
+[ mysql ]  [ redis ]        ← both private, no public port
 ```
 
-## Prerequisites (to be produced in the deployment phase)
+---
 
-- `Dockerfile` — Multi-stage PHP 8.4 + Node build. Alpine or slim Debian base.
-- `docker-compose.prod.yml` — Production stack.
-- `deployment/nginx/site.conf` — TLS, HTTP→HTTPS redirect, static asset caching, /admin protection.
-- `deployment/provision.sh` — Initial server setup (Docker, firewall, user, swap).
-- `deployment/deploy.sh` — Zero-downtime deploy: pull, build, migrate, restart, health check.
-- `deployment/backup.sh` — Nightly `mysqldump` + storage rsync to Hetzner Storage Box.
+## Phase 1 — Hetzner Cloud project + server
 
-## Environment
+1. Go to [console.hetzner.cloud](https://console.hetzner.cloud) and sign in.
+2. **New Project** → name it `malawiadventistmusic`.
+3. Left sidebar → **Security** → **SSH Keys** → **Add SSH Key**.
+   - Paste the contents of your `~/.ssh/id_ed25519.pub`.
+   - Name: `dingdong-hetzner` (or however you want to label it).
+4. Left sidebar → **Firewalls** → **Create Firewall**.
+   - Name: `web`.
+   - Inbound rules:
+     - **SSH** — TCP 22, source `Any IPv4, Any IPv6` (harden later to a fixed IP if you have one).
+     - **HTTP** — TCP 80, source Any.
+     - **HTTPS** — TCP 443, source Any.
+   - Outbound: leave defaults (all allowed).
+5. Left sidebar → **Servers** → **Add Server**.
+   - Location: **Falkenstein**.
+   - Image: **Ubuntu 24.04**.
+   - Type: **CX22** (Shared vCPU · x86).
+   - Networking: keep the defaults (Public IPv4 + IPv6 both on).
+   - SSH keys: check the key you just added.
+   - Firewalls: attach the `web` firewall.
+   - Volumes / Backups: skip for now (or enable Backups at ~20% extra if you want automated Hetzner snapshots — recommended once you have paying users).
+   - Name: `mam-prod-1`.
+   - Click **Create & Buy Now**.
+6. Wait ~30 seconds. Once green, copy the **IPv4 address** from the server card.
 
-Copy `.env.example` to `.env` on the server and fill:
-- `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://<domain>`
-- `DB_CONNECTION=mysql`, credentials
-- `CACHE_STORE=redis`, `QUEUE_CONNECTION=redis`, `SESSION_DRIVER=redis`
-- `MAIL_MAILER=smtp` (Mailgun / Postmark / Amazon SES)
-- `FILESYSTEM_DISK=s3` (or `hetzner`), plus S3 credentials for Hetzner Object Storage
-- `PAYCHANGU_*` — live keys
+---
 
-## SSL
+## Phase 2 — DNS at Namecheap
 
-Terminate at nginx via Let's Encrypt (`certbot --nginx`). Automatic renewal via systemd timer.
+Namecheap dashboard → **Domain List** → `malawiadventistmusic.com` → **Manage** → **Advanced DNS**.
 
-## Backups
+Delete any existing default records (Namecheap creates parking records — `CNAME @ parkingpage.namecheap.com`, `URL Redirect @ www.malawiadventistmusic.com`, etc.). Then add:
 
-- MySQL: nightly `mysqldump` gzipped, rotated 30 days, uploaded to Hetzner Storage Box.
-- Media: rsync to Storage Box daily; long-term keep in Object Storage lifecycle rule.
-- App restore drill: monthly, document RTO.
+| Type    | Host | Value               | TTL       |
+|---------|------|---------------------|-----------|
+| A Record| `@`  | `<HETZNER_IPV4>`    | Automatic |
+| A Record| `www`| `<HETZNER_IPV4>`    | Automatic |
 
-## Domain
+Save. Propagation is usually a minute or two; check with `nslookup malawiadventistmusic.com` from your laptop until it points at Hetzner's IP.
 
-`APP_URL` is the only place the public origin is set — no hardcoded localhost URLs elsewhere.
+---
+
+## Phase 3 — Provision the server
+
+From your laptop:
+
+```powershell
+# Grab your public key so we can pass it into the provisioner
+$pubkey = Get-Content ~/.ssh/id_ed25519.pub
+
+# Copy the provisioner up
+scp deployment/provision.sh root@<HETZNER_IPV4>:/tmp/
+
+# Run it. This creates the `deploy` user with your key, installs Docker, hardens SSH,
+# opens the firewall, adds swap, and refuses further root logins when it finishes.
+ssh root@<HETZNER_IPV4> "DEPLOY_USER_PUBKEY='$pubkey' bash /tmp/provision.sh"
+```
+
+Log out and back in as the `deploy` user:
+
+```powershell
+ssh deploy@<HETZNER_IPV4>
+```
+
+---
+
+## Phase 4 — First-time deploy
+
+On the server (`deploy@mam-prod-1`):
+
+```bash
+cd /srv/malawiadventistmusic
+git clone https://github.com/<your-user>/malawiadventistmusic.git .
+
+# Create production .env
+cp .env.production.example .env
+
+# Generate an APP_KEY. Easiest: run in a throwaway container.
+docker run --rm -v $PWD:/app -w /app php:8.4-cli \
+    php -r "echo 'APP_KEY=base64:'.base64_encode(random_bytes(32)).PHP_EOL;" \
+    | sed -i "0,/APP_KEY=/{s|APP_KEY=.*|$(cat)|}" .env
+
+# Fill in the rest — passwords, PayChangu keys, mail credentials.
+# NEVER paste production PayChangu keys anywhere except here.
+chmod 600 .env
+nano .env
+
+# First build + boot
+./deployment/deploy.sh
+```
+
+Wait for it to say `Deployed <sha>`. The site is now serving HTTP on the server IP but the domain won't work until we get SSL.
+
+---
+
+## Phase 5 — SSL via Let's Encrypt
+
+Still on the server:
+
+```bash
+./deployment/scripts/certbot-init.sh <your-email>
+```
+
+Certbot writes the cert to a shared volume, then reloads nginx. HTTPS is now live at `https://malawiadventistmusic.com`.
+
+The `certbot` service in `docker-compose.prod.yml` auto-renews every 12 hours.
+
+---
+
+## Phase 6 — Verify
+
+From your laptop:
+
+- `curl -fs https://malawiadventistmusic.com/up` → should return `200`.
+- Browse to the homepage — should render exactly like localhost, with real seed data.
+- Log in as an artist → `/submit-music` → walk through the wizard. Set `PAYCHANGU_FAKE=false` in `.env` first + `docker compose up -d app` to pick it up. Complete a small live PayChangu transaction to prove the loop works end-to-end.
+- Hit `/admin` and log in as `admin@demo.local` (change the password immediately in Filament).
+
+---
+
+## Phase 7 — Backups
+
+```bash
+# Test the backup script once
+sudo /srv/malawiadventistmusic/deployment/backup.sh
+
+# Then wire it into cron
+sudo crontab -e
+# Add:
+0 3 * * * /srv/malawiadventistmusic/deployment/backup.sh >> /var/log/mam-backup.log 2>&1
+```
+
+Optionally set `RSYNC_TARGET=u123456@u123456.your-storagebox.de:mam-backups` (a Hetzner Storage Box) so backups leave the server. Highly recommended.
+
+---
+
+## Ongoing deploys
+
+From your laptop:
+
+```powershell
+git push origin main
+ssh deploy@<HETZNER_IPV4> "cd /srv/malawiadventistmusic && ./deployment/deploy.sh"
+```
+
+Rollback:
+
+```powershell
+ssh deploy@<HETZNER_IPV4> "cd /srv/malawiadventistmusic && ./deployment/rollback.sh"
+```
+
+---
+
+## Common issues
+
+**500 on first request after deploy** — check `docker compose -f docker-compose.prod.yml logs app`. Usually a missing env var. Fix `.env`, `docker compose up -d app`.
+
+**Nginx says "no certificate"** — cert issuance failed. Re-run `certbot-init.sh`. Confirm DNS actually points at the server (`dig +short malawiadventistmusic.com`).
+
+**PayChangu webhook 401s** — signature mismatch. Confirm `PAYCHANGU_WEBHOOK_SECRET` in `.env` matches what you typed into the PayChangu dashboard. Rotate if unsure.
+
+**MySQL container refuses to start** — usually the volume was created with different credentials. If you're OK losing local data: `docker compose down -v` then re-`up`. If you have prod data, restore from backup first.
+
+---
 
 ## Do NOT
 
-- Expose MySQL or Redis ports to the internet.
-- Commit `.env` or `PAYCHANGU_*` keys.
-- Skip `--force` audit on production migrations.
-- Deploy without running `php artisan config:cache route:cache view:cache`.
+- Commit `.env`.
+- Expose MySQL / Redis ports to the internet.
+- Skip cert renewal — check certbot logs weekly for the first month.
+- Deploy directly to `main` without a local `npm run build` + `php artisan test` first (once tests exist).
+- Force-push to a shared branch after the site is live.
