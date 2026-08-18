@@ -21,31 +21,31 @@ export default function PlayerBar() {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur">
-            <div className="mx-auto max-w-[1800px] px-4 md:px-6 lg:px-8 flex items-center gap-4 h-20">
+            <div className="mx-auto max-w-[1800px] px-3 sm:px-4 md:px-6 lg:px-8 flex items-center gap-2 sm:gap-4 h-16 sm:h-20">
                 {/* Track info */}
-                <div className="flex items-center gap-3 w-64 shrink-0">
-                    <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-card">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-40 sm:w-56 md:w-64 shrink-0">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-card shrink-0">
                         {player.current?.artwork ? (
                             <img
                                 src={player.current.artwork}
                                 alt=""
-                                className="h-12 w-12 rounded-lg object-cover"
+                                className="h-full w-full rounded-lg object-cover"
                             />
                         ) : (
-                            <Music2 className="h-5 w-5" />
+                            <Music2 className="h-4 w-4 sm:h-5 sm:w-5" />
                         )}
                     </div>
-                    <div className="min-w-0">
-                        <p className="text-sm font-semibold text-ink truncate">
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-semibold text-ink truncate">
                             {player.current?.title ?? 'Nothing playing'}
                         </p>
-                        <p className="text-xs text-slate-500 truncate">
-                            {player.current?.artist ?? 'Select a song to start listening'}
+                        <p className="text-[11px] sm:text-xs text-slate-500 truncate">
+                            {player.current?.artist ?? 'Tap a song to start'}
                         </p>
                     </div>
                     <button
                         type="button"
-                        className="ml-auto text-slate-400 hover:text-brand-600 transition-colors"
+                        className="hidden sm:block ml-auto text-slate-400 hover:text-brand-600 transition-colors shrink-0"
                         aria-label="Like"
                     >
                         <Heart className="h-4 w-4" />
@@ -53,13 +53,13 @@ export default function PlayerBar() {
                 </div>
 
                 {/* Transport */}
-                <div className="flex-1 flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-3">
+                <div className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                    <div className="flex items-center gap-1 sm:gap-3">
                         <button
                             type="button"
                             onClick={player.toggleShuffle}
                             className={clsx(
-                                'p-1.5 rounded-full transition-colors',
+                                'hidden sm:block p-1.5 rounded-full transition-colors',
                                 player.shuffle
                                     ? 'text-brand-600'
                                     : 'text-slate-400 hover:text-ink',
@@ -80,7 +80,7 @@ export default function PlayerBar() {
                             type="button"
                             onClick={player.togglePlay}
                             disabled={!player.current}
-                            className="h-10 w-10 rounded-full bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 text-white flex items-center justify-center shadow-card transition-colors"
+                            className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-brand-600 hover:bg-brand-700 disabled:bg-slate-300 text-white flex items-center justify-center shadow-card transition-colors"
                             aria-label={player.isPlaying ? 'Pause' : 'Play'}
                         >
                             {player.isPlaying ? (
@@ -101,7 +101,7 @@ export default function PlayerBar() {
                             type="button"
                             onClick={player.cycleRepeat}
                             className={clsx(
-                                'p-1.5 rounded-full transition-colors',
+                                'hidden sm:block p-1.5 rounded-full transition-colors',
                                 player.repeat !== 'off'
                                     ? 'text-brand-600'
                                     : 'text-slate-400 hover:text-ink',
@@ -115,7 +115,7 @@ export default function PlayerBar() {
                             )}
                         </button>
                     </div>
-                    <div className="w-full flex items-center gap-2 max-w-xl">
+                    <div className="hidden sm:flex w-full items-center gap-2 max-w-xl">
                         <span className="text-[11px] tabular-nums text-slate-500 w-8 text-right">
                             {formatDuration(player.progress)}
                         </span>
