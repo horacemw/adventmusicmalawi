@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->statefulApi();
+
+        // PayChangu webhooks are signed with HMAC — CSRF is not applicable and the
+        // request comes from PayChangu's servers, not a browser session.
+        $middleware->validateCsrfTokens(except: [
+            'payments/webhook/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

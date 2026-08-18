@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'paychangu' => [
+        'base_url' => env('PAYCHANGU_BASE_URL', 'https://api.paychangu.com'),
+        'public_key' => env('PAYCHANGU_PUBLIC_KEY'),
+        'secret_key' => env('PAYCHANGU_SECRET_KEY'),
+        'webhook_secret' => env('PAYCHANGU_WEBHOOK_SECRET'),
+        'callback_url' => env('PAYCHANGU_CALLBACK_URL'),
+        'return_url' => env('PAYCHANGU_RETURN_URL'),
+        // Simulate live PayChangu responses in tests / local dev without hitting the API
+        'fake' => env('PAYCHANGU_FAKE', false),
+    ],
+
+    'submissions' => [
+        'fee_amount' => (int) env('SUBMISSION_FEE_AMOUNT', 15000),
+        'fee_currency' => env('SUBMISSION_FEE_CURRENCY', 'MWK'),
+    ],
+
 ];
