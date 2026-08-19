@@ -31,8 +31,9 @@ git checkout --force "$REF"
 NEW_COMMIT=$(git rev-parse HEAD)
 
 if [ "$PREV_COMMIT" = "$NEW_COMMIT" ]; then
-    echo "==> Already at $NEW_COMMIT — nothing to do"
-    exit 0
+    # Working tree already at target ref (e.g. someone ran `git pull` before deploy.sh).
+    # Still rebuild the image and restart containers so the deployed image matches the code.
+    echo "==> Already at $NEW_COMMIT — rebuilding to ensure image is fresh"
 fi
 
 echo "==> Building images"

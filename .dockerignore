@@ -1,0 +1,53 @@
+# Version control — sending .git to build context is huge and pointless
+.git
+.gitignore
+.gitattributes
+
+# Local dependency dirs — installed inside the image by composer / npm
+/vendor
+/node_modules
+
+# Editor / IDE
+/.vscode
+/.idea
+/.fleet
+/.nova
+/.zed
+.phpactor.json
+
+# Runtime
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitkeep
+
+# Built assets — rebuilt inside the image
+/public/build
+
+# Env & secrets
+.env
+.env.backup
+.env.production
+.env.prod-staging
+/composer.phar
+auth.json
+Homestead.json
+Homestead.yaml
+
+# Local database + test cache
+/database/database.sqlite
+.phpunit.result.cache
+/.phpunit.cache
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local Docker Compose (dev only)
+docker-compose.yml
