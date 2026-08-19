@@ -42,15 +42,20 @@ Route::get('/playlists/{playlist}', [PlaylistController::class, 'show'])
     ->name('playlists.show');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// Every authenticated route now requires a verified email.
+// Profile lives outside the `verified` group so a user can still edit
+// their email if they mistyped it during registration.
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-    // Playlists — auth required; visibility of individual playlists handled in controller
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Playlists
     Route::get('/playlists', [PlaylistController::class, 'index'])->name('playlists.index');
     Route::get('/playlists/new', [PlaylistController::class, 'create'])->name('playlists.create');
     Route::post('/playlists', [PlaylistController::class, 'store'])->name('playlists.store');
@@ -59,16 +64,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/playlists/{playlist}/songs', [PlaylistController::class, 'addSong'])->name('playlists.songs.store');
     Route::delete('/playlists/{playlist}/songs/{song}', [PlaylistController::class, 'removeSong'])->name('playlists.songs.destroy');
 
-    // Submissions — require email verification because submitters get payment + moderation emails
-    Route::middleware('verified')->group(function () {
-        Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
-        Route::get('/submit-music', [SubmissionController::class, 'create'])->name('submissions.create');
-        Route::get('/submissions/{submission}/edit', [SubmissionController::class, 'edit'])->name('submissions.edit');
-        Route::put('/submissions/{submission}', [SubmissionController::class, 'update'])->name('submissions.update');
-        Route::post('/submissions/{submission}/files', [SubmissionController::class, 'uploadFile'])->name('submissions.files.store');
-        Route::delete('/submissions/{submission}/files/{file}', [SubmissionController::class, 'deleteFile'])->name('submissions.files.destroy');
-        Route::post('/submissions/{submission}/pay', [SubmissionController::class, 'submitForPayment'])->name('submissions.pay');
-    });
+    // Submissions
+    Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
+    Route::get('/submit-music', [SubmissionController::class, 'create'])->name('submissions.create');
+    Route::get('/submissions/{submission}/edit', [SubmissionController::class, 'edit'])->name('submissions.edit');
+    Route::put('/submissions/{submission}', [SubmissionController::class, 'update'])->name('submissions.update');
+    Route::post('/submissions/{submission}/files', [SubmissionController::class, 'uploadFile'])->name('submissions.files.store');
+    Route::delete('/submissions/{submission}/files/{file}', [SubmissionController::class, 'deleteFile'])->name('submissions.files.destroy');
+    Route::post('/submissions/{submission}/pay', [SubmissionController::class, 'submitForPayment'])->name('submissions.pay');
 });
 
 // Payments — return is a browser redirect (auth optional), webhook must not require auth
