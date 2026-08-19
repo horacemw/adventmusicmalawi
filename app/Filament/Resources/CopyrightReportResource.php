@@ -38,7 +38,7 @@ class CopyrightReportResource extends Resource
             Forms\Components\Section::make('Report')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\TextInput::make('reference')->fontFamily('mono')->disabled(),
+                    Forms\Components\TextInput::make('reference')->extraInputAttributes(['class' => 'font-mono'])->disabled(),
                     Forms\Components\Select::make('status')
                         ->options([
                             CopyrightReport::STATUS_RECEIVED => 'Received',
