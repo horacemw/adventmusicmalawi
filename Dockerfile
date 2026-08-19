@@ -9,7 +9,6 @@ COPY resources ./resources
 COPY vite.config.js tsconfig.json tailwind.config.js postcss.config.js ./
 COPY public ./public
 COPY routes ./routes
-COPY vendor/tightenco/ziggy ./vendor/tightenco/ziggy
 RUN npm run build
 
 # ---------- Stage 2: Composer install ----------
