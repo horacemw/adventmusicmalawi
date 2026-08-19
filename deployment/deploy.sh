@@ -39,8 +39,17 @@ fi
 echo "==> Building images"
 docker compose -f "$COMPOSE" build app
 
+# Named volumes only seed from the image on FIRST create. The app_public volume
+# is shared with nginx to serve /build/ assets — if we don't recreate it, nginx
+# keeps serving the stale build from the volume even though we just rebuilt the
+# image. Take everything down and drop the volume so it re-seeds fresh.
+echo "==> Refreshing shared public volume so new /build/ assets show up"
+docker compose -f "$COMPOSE" down --remove-orphans
+PROJECT="$(basename "$PWD")"
+docker volume rm "${PROJECT}_app_public" 2>/dev/null || true
+
 echo "==> Applying migrations + rolling out"
-docker compose -f "$COMPOSE" up -d --remove-orphans
+docker compose -f "$COMPOSE" up -d
 
 echo "==> Waiting for /up health"
 for i in $(seq 1 30); do
