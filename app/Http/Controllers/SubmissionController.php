@@ -72,11 +72,14 @@ class SubmissionController extends Controller
     {
         $this->authorizeOwn($request, $submission);
 
+        // The wizard PUTs the whole form on each "Save & continue" click, so at any
+        // given step some fields will still be empty. All fields are optional here —
+        // required fields are enforced at submit-for-payment (SubmissionService::markAwaitingPayment).
         $data = $request->validate([
-            'submitter_name' => 'required|string|max:255',
-            'submitter_email' => 'required|email|max:255',
+            'submitter_name' => 'nullable|string|max:255',
+            'submitter_email' => 'nullable|email|max:255',
             'submitter_phone' => 'nullable|string|max:32',
-            'song_title' => 'required|string|max:255',
+            'song_title' => 'nullable|string|max:255',
             'artist_name' => 'nullable|string|max:255',
             'group_name' => 'nullable|string|max:255',
             'choir_name' => 'nullable|string|max:255',
@@ -102,6 +105,10 @@ class SubmissionController extends Controller
             'mood_ids' => 'array',
             'mood_ids.*' => 'exists:moods,id',
         ]);
+
+        // Only overwrite fields that actually arrived in the request; treat empty
+        // strings as "leave alone" so blank step-1 fields don't clobber step-2 saves.
+        $data = array_filter($data, fn ($v) => $v !== null && $v !== '');
 
         try {
             $this->submissions->updateDetails($submission, $data);

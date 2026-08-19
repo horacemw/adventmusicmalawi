@@ -1,3 +1,4 @@
+import ApplicationLogo from '@/Components/ApplicationLogo';
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -32,8 +33,16 @@ export default function Login({
         <GuestLayout>
             <Head title="Log in" />
 
+            <div className="mb-6 text-center">
+                <div className="flex justify-center mb-4">
+                    <ApplicationLogo size="lg" iconOnly />
+                </div>
+                <h1 className="text-xl font-semibold text-ink">Welcome back</h1>
+                <p className="text-sm text-slate-500 mt-1">Sign in to Malawi Adventist Music.</p>
+            </div>
+
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <div className="mb-4 rounded-lg bg-brand-50 text-brand-800 text-sm px-3 py-2">
                     {status}
                 </div>
             )}
@@ -84,26 +93,33 @@ export default function Login({
                                 )
                             }
                         />
-                        <span className="ms-2 text-sm text-gray-600">
+                        <span className="ms-2 text-sm text-slate-600">
                             Remember me
                         </span>
                     </label>
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
+                <div className="mt-6 flex items-center justify-between gap-3">
+                    {canResetPassword ? (
                         <Link
                             href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            className="text-sm text-slate-500 hover:text-brand-700"
                         >
                             Forgot your password?
                         </Link>
-                    )}
+                    ) : <span />}
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
+                    <PrimaryButton disabled={processing}>
                         Log in
                     </PrimaryButton>
                 </div>
+
+                <p className="mt-8 pt-6 border-t border-slate-100 text-sm text-center text-slate-500">
+                    New here?{' '}
+                    <Link href={route('register')} className="text-brand-700 hover:text-brand-800 font-semibold">
+                        Create an account
+                    </Link>
+                </p>
             </form>
         </GuestLayout>
     );

@@ -1,3 +1,4 @@
+import ApplicationLogo from '@/Components/ApplicationLogo';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
@@ -25,6 +26,14 @@ export default function Register() {
     return (
         <GuestLayout>
             <Head title="Register" />
+
+            <div className="mb-6 text-center">
+                <div className="flex justify-center mb-4">
+                    <ApplicationLogo size="lg" iconOnly />
+                </div>
+                <h1 className="text-xl font-semibold text-ink">Create your account</h1>
+                <p className="text-sm text-slate-500 mt-1">Free — takes 30 seconds.</p>
+            </div>
 
             <form onSubmit={submit}>
                 <div>
@@ -103,18 +112,18 @@ export default function Register() {
                     />
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <Link
-                        href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Already registered?
-                    </Link>
-
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
+                <div className="mt-6">
+                    <PrimaryButton className="w-full" disabled={processing}>
+                        {processing ? 'Creating account…' : 'Create account'}
                     </PrimaryButton>
                 </div>
+
+                <p className="mt-8 pt-6 border-t border-slate-100 text-sm text-center text-slate-500">
+                    Already have an account?{' '}
+                    <Link href={route('login')} className="text-brand-700 hover:text-brand-800 font-semibold">
+                        Sign in
+                    </Link>
+                </p>
             </form>
         </GuestLayout>
     );

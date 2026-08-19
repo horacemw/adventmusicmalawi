@@ -34,8 +34,12 @@ Route::get('/privacy', fn () => Inertia::render('Legal', ['kind' => 'privacy']))
 Route::get('/copyright', fn () => Inertia::render('Legal', ['kind' => 'copyright']))->name('copyright');
 Route::get('/settings', fn () => Inertia::render('Settings'))->name('settings');
 
-// Public playlist view — public/unlisted playlists visible without auth
-Route::get('/playlists/{playlist}', [PlaylistController::class, 'show'])->name('playlists.show');
+// Public playlist view — public/unlisted playlists visible without auth.
+// {playlist} constrained to digits so `/playlists/new` (below, auth-only) doesn't get
+// swallowed by route model binding trying to find a playlist with id="new".
+Route::get('/playlists/{playlist}', [PlaylistController::class, 'show'])
+    ->where('playlist', '[0-9]+')
+    ->name('playlists.show');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])

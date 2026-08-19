@@ -5,6 +5,7 @@ import MobileNav from '@/Components/App/MobileNav';
 import TopBar from '@/Components/App/TopBar';
 import PlayerBar from '@/Components/App/PlayerBar';
 import NowPlayingPanel from '@/Components/App/NowPlayingPanel';
+import FlashToaster from '@/Components/App/FlashToaster';
 import { PlayerProvider } from '@/Contexts/PlayerContext';
 import { MobileNavProvider } from '@/Contexts/MobileNavContext';
 import type { SongPayload } from '@/types';
@@ -41,6 +42,7 @@ export default function AppLayout({
                         </div>
                     </div>
                     <PlayerBar />
+                    <FlashToaster />
                 </div>
             </PlayerProvider>
         </MobileNavProvider>
