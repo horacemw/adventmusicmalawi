@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlaylistController;
@@ -33,6 +34,11 @@ Route::get('/terms', fn () => Inertia::render('Legal', ['kind' => 'terms']))->na
 Route::get('/privacy', fn () => Inertia::render('Legal', ['kind' => 'privacy']))->name('privacy');
 Route::get('/copyright', fn () => Inertia::render('Legal', ['kind' => 'copyright']))->name('copyright');
 Route::get('/settings', fn () => Inertia::render('Settings'))->name('settings');
+
+// Public song download — requires auth so we can track user; no verify required for MVP.
+Route::get('/download/song/{song:slug}', [DownloadController::class, 'song'])
+    ->middleware('auth')
+    ->name('downloads.song');
 
 // Public playlist view — public/unlisted playlists visible without auth.
 // {playlist} constrained to digits so `/playlists/new` (below, auth-only) doesn't get

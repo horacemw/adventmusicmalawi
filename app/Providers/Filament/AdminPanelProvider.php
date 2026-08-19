@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -28,8 +29,20 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Malawi Adventist Music')
+            ->brandLogo(asset('favicon.ico'))
+            ->favicon(asset('favicon.ico'))
             ->colors([
                 'primary' => Color::Green,
+            ])
+            ->font('Inter')
+            ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups([
+                NavigationGroup::make('Content')->icon('heroicon-o-musical-note')->collapsible(false),
+                NavigationGroup::make('Moderation')->icon('heroicon-o-shield-check'),
+                NavigationGroup::make('Monetisation')->icon('heroicon-o-banknotes'),
+                NavigationGroup::make('Taxonomy')->icon('heroicon-o-tag')->collapsed(),
+                NavigationGroup::make('Users')->icon('heroicon-o-users'),
+                NavigationGroup::make('System')->icon('heroicon-o-cog-6-tooth')->collapsed(),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
@@ -37,10 +50,7 @@ class AdminPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
-            ])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

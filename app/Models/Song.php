@@ -31,7 +31,7 @@ class Song extends Model
         'audio_path', 'audio_format', 'duration_seconds', 'audio_size_bytes',
         'artwork_path', 'release_year', 'released_at',
         'status',
-        'stream_count', 'like_count', 'share_count',
+        'stream_count', 'like_count', 'share_count', 'download_count',
         'is_featured', 'allow_download', 'explicit_content',
         'track_number', 'published_at',
     ];
@@ -47,6 +47,7 @@ class Song extends Model
         'stream_count' => 'integer',
         'like_count' => 'integer',
         'share_count' => 'integer',
+        'download_count' => 'integer',
         'release_year' => 'integer',
         'track_number' => 'integer',
     ];
