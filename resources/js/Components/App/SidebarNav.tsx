@@ -47,7 +47,7 @@ const sections: NavSection[] = [
             { label: 'Artists', href: '/artists', icon: Mic },
             { label: 'Groups & Choirs', href: '/groups', icon: Users2 },
             { label: 'Churches', href: '/churches', icon: Church },
-            { label: 'Playlists', href: '/dashboard', icon: Album },
+            { label: 'Playlists', href: '/playlists', icon: Album },
         ],
     },
     {
@@ -69,7 +69,7 @@ const sections: NavSection[] = [
         items: [
             { label: 'About', href: '/about', icon: Info },
             { label: 'Contact', href: '/contact', icon: Mail },
-            { label: 'Settings', href: '/dashboard', icon: Settings },
+            { label: 'Settings', href: '/settings', icon: Settings },
         ],
     },
 ];

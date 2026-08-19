@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SubmissionController;
 use Illuminate\Support\Facades\Route;
@@ -21,20 +24,36 @@ Route::get('/occasions', fn () => Inertia::render('Placeholder', ['title' => 'Oc
 Route::get('/trending', fn () => Inertia::render('Placeholder', ['title' => 'Trending']))->name('trending');
 Route::get('/top-100', fn () => Inertia::render('Placeholder', ['title' => 'Top 100']))->name('top-100');
 Route::get('/search', fn () => Inertia::render('Placeholder', ['title' => 'Search']))->name('search');
-Route::get('/about', fn () => Inertia::render('Placeholder', ['title' => 'About']))->name('about');
-Route::get('/contact', fn () => Inertia::render('Placeholder', ['title' => 'Contact']))->name('contact');
-Route::get('/terms', fn () => Inertia::render('Placeholder', ['title' => 'Terms']))->name('terms');
-Route::get('/privacy', fn () => Inertia::render('Placeholder', ['title' => 'Privacy']))->name('privacy');
-Route::get('/copyright', fn () => Inertia::render('Placeholder', ['title' => 'Copyright']))->name('copyright');
 
-Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
-    ->middleware(['auth', 'verified'])
+// Content pages (accessible without login)
+Route::get('/about', fn () => Inertia::render('About'))->name('about');
+Route::get('/contact', fn () => Inertia::render('Contact'))->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::get('/terms', fn () => Inertia::render('Legal', ['kind' => 'terms']))->name('terms');
+Route::get('/privacy', fn () => Inertia::render('Legal', ['kind' => 'privacy']))->name('privacy');
+Route::get('/copyright', fn () => Inertia::render('Legal', ['kind' => 'copyright']))->name('copyright');
+Route::get('/settings', fn () => Inertia::render('Settings'))->name('settings');
+
+// Public playlist view — public/unlisted playlists visible without auth
+Route::get('/playlists/{playlist}', [PlaylistController::class, 'show'])->name('playlists.show');
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Playlists — auth required; visibility of individual playlists handled in controller
+    Route::get('/playlists', [PlaylistController::class, 'index'])->name('playlists.index');
+    Route::get('/playlists/new', [PlaylistController::class, 'create'])->name('playlists.create');
+    Route::post('/playlists', [PlaylistController::class, 'store'])->name('playlists.store');
+    Route::patch('/playlists/{playlist}', [PlaylistController::class, 'update'])->name('playlists.update');
+    Route::delete('/playlists/{playlist}', [PlaylistController::class, 'destroy'])->name('playlists.destroy');
+    Route::post('/playlists/{playlist}/songs', [PlaylistController::class, 'addSong'])->name('playlists.songs.store');
+    Route::delete('/playlists/{playlist}/songs/{song}', [PlaylistController::class, 'removeSong'])->name('playlists.songs.destroy');
 
     // Submissions — require email verification because submitters get payment + moderation emails
     Route::middleware('verified')->group(function () {
