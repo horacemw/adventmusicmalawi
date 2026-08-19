@@ -1,5 +1,17 @@
 import clsx from 'clsx';
-import { Heart, MoreHorizontal, Music2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward } from 'lucide-react';
+import {
+    GripHorizontal,
+    Heart,
+    Music2,
+    Pause,
+    Play,
+    Repeat,
+    Shuffle,
+    SkipBack,
+    SkipForward,
+    X,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { formatDuration, usePlayer } from '@/Contexts/PlayerContext';
 import type { SongPayload } from '@/types';
 
@@ -7,23 +19,104 @@ interface Props {
     fallback: SongPayload | null;
 }
 
+const HIDE_KEY = 'mam.nowplaying.hidden';
+const POS_KEY = 'mam.nowplaying.pos';
+
 export default function NowPlayingPanel({ fallback }: Props) {
     const player = usePlayer();
     const track = player.current ?? fallback;
 
+    const [hidden, setHidden] = useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem(HIDE_KEY) === '1';
+    });
+
+    // Drag state — offset from the natural docked position
+    const [pos, setPos] = useState<{ x: number; y: number }>(() => {
+        if (typeof window === 'undefined') return { x: 0, y: 0 };
+        try {
+            const raw = window.localStorage.getItem(POS_KEY);
+            return raw ? JSON.parse(raw) : { x: 0, y: 0 };
+        } catch {
+            return { x: 0, y: 0 };
+        }
+    });
+    const dragState = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+
+    useEffect(() => {
+        window.localStorage.setItem(POS_KEY, JSON.stringify(pos));
+    }, [pos]);
+
+    const dismiss = () => {
+        window.localStorage.setItem(HIDE_KEY, '1');
+        setHidden(true);
+    };
+
+    const startDrag = (e: React.PointerEvent) => {
+        (e.target as Element).setPointerCapture?.(e.pointerId);
+        dragState.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            origX: pos.x,
+            origY: pos.y,
+        };
+    };
+    const onDrag = (e: React.PointerEvent) => {
+        if (!dragState.current) return;
+        const dx = e.clientX - dragState.current.startX;
+        const dy = e.clientY - dragState.current.startY;
+        setPos({ x: dragState.current.origX + dx, y: dragState.current.origY + dy });
+    };
+    const endDrag = () => {
+        dragState.current = null;
+    };
+    const resetPosition = () => setPos({ x: 0, y: 0 });
+
+    // Small floating "Show Now Playing" button when dismissed
+    if (hidden) {
+        return (
+            <aside className="hidden xl:block w-80 shrink-0">
+                <button
+                    type="button"
+                    onClick={() => {
+                        window.localStorage.removeItem(HIDE_KEY);
+                        setHidden(false);
+                    }}
+                    className="w-full rounded-2xl bg-white border border-dashed border-slate-200 hover:border-brand-500 text-slate-500 hover:text-brand-700 text-xs font-semibold py-3 flex items-center justify-center gap-2"
+                >
+                    <Music2 className="h-3.5 w-3.5" />
+                    Show Now Playing
+                </button>
+            </aside>
+        );
+    }
+
     return (
-        <aside className="hidden xl:flex flex-col w-80 shrink-0 gap-4">
+        <aside
+            className="hidden xl:flex flex-col w-80 shrink-0 gap-4"
+            style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
+        >
             <div className="rounded-2xl bg-white border border-slate-200 shadow-card overflow-hidden">
-                <div className="flex items-center justify-between px-5 pt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div
+                    className="flex items-center justify-between px-5 pt-4 cursor-grab active:cursor-grabbing select-none"
+                    onPointerDown={startDrag}
+                    onPointerMove={onDrag}
+                    onPointerUp={endDrag}
+                    onPointerCancel={endDrag}
+                    onDoubleClick={resetPosition}
+                    title="Drag to move · Double-click to reset"
+                >
+                    <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        <GripHorizontal className="h-4 w-4 text-slate-400" />
                         Now Playing
-                    </p>
+                    </div>
                     <button
                         type="button"
-                        className="text-slate-400 hover:text-ink"
-                        aria-label="More"
+                        onClick={dismiss}
+                        className="text-slate-400 hover:text-rose-600"
+                        aria-label="Dismiss Now Playing"
                     >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 

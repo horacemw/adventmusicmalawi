@@ -386,8 +386,14 @@ export default function Wizard({ submission, options, fees }: WizardProps) {
                                 </Field>
                             </div>
 
-                            <Field label="Description">
-                                <textarea rows={4} value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} className="input" placeholder="What is the song about?" />
+                            <Field label="Lyrics (optional)">
+                                <textarea
+                                    rows={6}
+                                    value={form.data.description}
+                                    onChange={(e) => form.setData('description', e.target.value)}
+                                    className="input"
+                                    placeholder="Paste the lyrics here — or leave blank and upload a Word document at step 3."
+                                />
                             </Field>
 
                             <Field label="Categories">
