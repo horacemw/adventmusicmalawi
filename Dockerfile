@@ -62,6 +62,13 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /build/public/build ./public/build
 
+# Strip UTF-8 BOMs from PHP files. Windows PowerShell's Set-Content -Encoding UTF8
+# writes a BOM by default; if that ever slips into a commit, PHP would fatal with
+# "Namespace declaration statement has to be the very first statement in the script".
+# Fail-safe here so a bad commit doesn't break prod.
+RUN find app config database routes tests bootstrap -name '*.php' -type f -exec \
+    sed -i '1s/^\xEF\xBB\xBF//' {} + || true
+
 # Ensure Laravel storage dirs exist and are writable by the php-fpm user (www-data)
 RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs storage/app/public bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache \
