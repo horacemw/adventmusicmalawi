@@ -2,29 +2,39 @@
 
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DiscoverController;
 use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfilesController;
 use App\Http\Controllers\SubmissionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Placeholder discovery routes — filled in during later phases.
-Route::get('/discover', fn () => Inertia::render('Placeholder', ['title' => 'Discover']))->name('discover');
-Route::get('/songs', fn () => Inertia::render('Placeholder', ['title' => 'Songs']))->name('songs.index');
-Route::get('/albums', fn () => Inertia::render('Placeholder', ['title' => 'Albums']))->name('albums.index');
-Route::get('/artists', fn () => Inertia::render('Placeholder', ['title' => 'Artists']))->name('artists.index');
-Route::get('/groups', fn () => Inertia::render('Placeholder', ['title' => 'Groups & Choirs']))->name('groups.index');
-Route::get('/churches', fn () => Inertia::render('Placeholder', ['title' => 'Churches']))->name('churches.index');
-Route::get('/hymn-books', fn () => Inertia::render('Placeholder', ['title' => 'Hymn Books']))->name('hymn-books.index');
-Route::get('/occasions', fn () => Inertia::render('Placeholder', ['title' => 'Occasions']))->name('occasions.index');
-Route::get('/trending', fn () => Inertia::render('Placeholder', ['title' => 'Trending']))->name('trending');
-Route::get('/top-100', fn () => Inertia::render('Placeholder', ['title' => 'Top 100']))->name('top-100');
-Route::get('/search', fn () => Inertia::render('Placeholder', ['title' => 'Search']))->name('search');
+// Discovery / browse pages
+Route::get('/discover', [DiscoverController::class, 'index'])->name('discover');
+Route::get('/songs', [DiscoverController::class, 'songs'])->name('songs.index');
+Route::get('/albums', [DiscoverController::class, 'albums'])->name('albums.index');
+Route::get('/artists', [DiscoverController::class, 'artists'])->name('artists.index');
+Route::get('/groups', [DiscoverController::class, 'groups'])->name('groups.index');
+Route::get('/churches', [DiscoverController::class, 'churches'])->name('churches.index');
+Route::get('/hymn-books', [DiscoverController::class, 'hymnBooks'])->name('hymn-books.index');
+Route::get('/occasions', [DiscoverController::class, 'occasions'])->name('occasions.index');
+Route::get('/occasions/{occasion:slug}', [DiscoverController::class, 'occasion'])->name('occasions.show');
+Route::get('/trending', [DiscoverController::class, 'trending'])->name('trending');
+Route::get('/top-100', [DiscoverController::class, 'top100'])->name('top-100');
+Route::get('/search', [DiscoverController::class, 'search'])->name('search');
+
+// Detail / profile pages
+Route::get('/songs/{song:slug}', [ProfilesController::class, 'song'])->name('songs.show');
+Route::get('/albums/{album:slug}', [ProfilesController::class, 'album'])->name('albums.show');
+Route::get('/artists/{artist:slug}', [ProfilesController::class, 'artist'])->name('artists.show');
+Route::get('/groups/{group:slug}', [ProfilesController::class, 'group'])->name('groups.show');
+Route::get('/churches/{church:slug}', [ProfilesController::class, 'church'])->name('churches.show');
 
 // Content pages (accessible without login)
 Route::get('/about', fn () => Inertia::render('About'))->name('about');
