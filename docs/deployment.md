@@ -92,11 +92,47 @@ ssh deploy@<HETZNER_IPV4>
 
 ## Phase 4 — First-time deploy
 
-On the server (`deploy@mam-prod-1`):
+### 4a. Give the server read access to the private GitHub repo
+
+The repo is private, so the server needs a **deploy key** to clone. On the server (`deploy@mam-prod-1`):
+
+```bash
+# Generate a repo-scoped SSH key
+ssh-keygen -t ed25519 -N '' -C 'mam-prod-deploy-key' -f ~/.ssh/github_deploy
+cat ~/.ssh/github_deploy.pub
+```
+
+Copy the printed public key line. In your browser:
+- Open `https://github.com/horacemw/adventmusicmalawi/settings/keys/new`
+- Title: `mam-prod-1`
+- Key: paste the public key
+- **Do NOT** tick "Allow write access" — read-only is enough
+- Save
+
+Then tell SSH to use this key for GitHub:
+
+```bash
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/github_deploy
+    IdentitiesOnly yes
+EOF
+
+# Trust GitHub's host key
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+# Smoke-test the deploy key
+ssh -T git@github.com
+# Expected: "Hi horacemw/adventmusicmalawi! You've successfully authenticated, ..."
+```
+
+### 4b. Clone and configure
 
 ```bash
 cd /srv/malawiadventistmusic
-git clone https://github.com/<your-user>/malawiadventistmusic.git .
+git clone git@github.com:horacemw/adventmusicmalawi.git .
 
 # Create production .env
 cp .env.production.example .env
