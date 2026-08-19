@@ -6,6 +6,7 @@ use App\Models\Album;
 use App\Models\Artist;
 use App\Models\Church;
 use App\Models\MusicGroup;
+use App\Models\Poem;
 use App\Models\Song;
 use App\Support\SongPayload;
 use Inertia\Inertia;
@@ -225,6 +226,64 @@ class ProfilesController extends Controller
                 'slug' => $a->slug,
                 'artwork' => $a->artwork_path,
                 'year' => $a->release_year,
+            ]),
+        ]);
+    }
+
+    public function poem(Poem $poem): Response
+    {
+        abort_unless($poem->status === Poem::STATUS_PUBLISHED, 404);
+
+        $poem->load([
+            'artist:id,name,stage_name,slug,image_path',
+            'church:id,name,slug',
+            'category:id,name,slug',
+            'language:id,name',
+        ]);
+
+        $poem->increment('view_count');
+
+        $related = Poem::published()
+            ->with(['artist:id,name,stage_name,slug', 'church:id,name'])
+            ->when($poem->artist_id, fn ($q) => $q->where('artist_id', $poem->artist_id))
+            ->when(! $poem->artist_id && $poem->church_id, fn ($q) => $q->where('church_id', $poem->church_id))
+            ->where('id', '!=', $poem->id)
+            ->limit(6)->get();
+
+        return Inertia::render('Profiles/Poem', [
+            'poem' => [
+                'id' => $poem->id,
+                'title' => $poem->title,
+                'slug' => $poem->slug,
+                'summary' => $poem->summary,
+                'body' => $poem->body,
+                'image' => $poem->image_path,
+                'document' => $poem->document_path,
+                'allow_download' => (bool) $poem->allow_download,
+                'is_featured' => (bool) $poem->is_featured,
+                'view_count' => $poem->view_count,
+                'like_count' => $poem->like_count,
+                'published_at' => optional($poem->published_at)->toDateString(),
+                'author' => $poem->displayAuthor(),
+                'artist' => $poem->artist ? [
+                    'name' => $poem->artist->stage_name ?: $poem->artist->name,
+                    'slug' => $poem->artist->slug,
+                    'image' => $poem->artist->image_path,
+                ] : null,
+                'church' => $poem->church ? [
+                    'name' => $poem->church->name,
+                    'slug' => $poem->church->slug,
+                ] : null,
+                'category' => $poem->category ? ['name' => $poem->category->name, 'slug' => $poem->category->slug] : null,
+                'language' => $poem->language?->name,
+            ],
+            'related' => $related->map(fn (Poem $p) => [
+                'id' => $p->id,
+                'title' => $p->title,
+                'slug' => $p->slug,
+                'summary' => $p->summary,
+                'image' => $p->image_path,
+                'author' => $p->displayAuthor(),
             ]),
         ]);
     }

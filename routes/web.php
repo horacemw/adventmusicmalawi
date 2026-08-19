@@ -23,6 +23,7 @@ Route::get('/artists', [DiscoverController::class, 'artists'])->name('artists.in
 Route::get('/groups', [DiscoverController::class, 'groups'])->name('groups.index');
 Route::get('/churches', [DiscoverController::class, 'churches'])->name('churches.index');
 Route::get('/hymn-books', [DiscoverController::class, 'hymnBooks'])->name('hymn-books.index');
+Route::get('/poems', [DiscoverController::class, 'poems'])->name('poems.index');
 Route::get('/occasions', [DiscoverController::class, 'occasions'])->name('occasions.index');
 Route::get('/occasions/{occasion:slug}', [DiscoverController::class, 'occasion'])->name('occasions.show');
 Route::get('/trending', [DiscoverController::class, 'trending'])->name('trending');
@@ -35,6 +36,7 @@ Route::get('/albums/{album:slug}', [ProfilesController::class, 'album'])->name('
 Route::get('/artists/{artist:slug}', [ProfilesController::class, 'artist'])->name('artists.show');
 Route::get('/groups/{group:slug}', [ProfilesController::class, 'group'])->name('groups.show');
 Route::get('/churches/{church:slug}', [ProfilesController::class, 'church'])->name('churches.show');
+Route::get('/poems/{poem:slug}', [ProfilesController::class, 'poem'])->name('poems.show');
 
 // Content pages (accessible without login)
 Route::get('/about', fn () => Inertia::render('About'))->name('about');

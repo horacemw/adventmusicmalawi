@@ -6,6 +6,7 @@ use App\Models\Album;
 use App\Models\Artist;
 use App\Models\MusicGroup;
 use App\Models\Payment;
+use App\Models\Poem;
 use App\Models\Song;
 use App\Models\Stream;
 use App\Models\Submission;
@@ -73,6 +74,11 @@ class PlatformStats extends BaseWidget
             Stat::make('Albums', Album::count())
                 ->description(Album::where('is_published', true)->count().' published')
                 ->descriptionIcon('heroicon-m-rectangle-stack')
+                ->color('primary'),
+
+            Stat::make('Poems', Poem::count())
+                ->description(Poem::published()->count().' published')
+                ->descriptionIcon('heroicon-m-document-text')
                 ->color('primary'),
 
             Stat::make('Storage used', $storageMb < 1024 ? number_format($storageMb, 1).' MB' : number_format($storageMb / 1024, 2).' GB')

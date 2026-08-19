@@ -6,6 +6,7 @@ use App\Models\Album;
 use App\Models\Category;
 use App\Models\MusicGroup;
 use App\Models\Occasion;
+use App\Models\Poem;
 use App\Models\Song;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -72,6 +73,17 @@ class HomeController extends Controller
                     'slug' => $g->slug,
                     'type' => $g->type,
                     'image' => $g->image_path,
+                ]),
+            'poems' => Poem::published()->with(['artist:id,name,stage_name,slug', 'church:id,name', 'category:id,name'])
+                ->orderByDesc('is_featured')->orderByDesc('published_at')->limit(3)->get()
+                ->map(fn (Poem $p) => [
+                    'id' => $p->id,
+                    'title' => $p->title,
+                    'slug' => $p->slug,
+                    'summary' => $p->summary,
+                    'image' => $p->image_path,
+                    'author' => $p->displayAuthor(),
+                    'category' => $p->category?->name,
                 ]),
             'nowPlaying' => (function () {
                 $s = Song::published()

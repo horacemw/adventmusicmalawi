@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import SectionHeader from '@/Components/Home/SectionHeader';
 import SongList from '@/Components/Home/SongList';
 import EntityCard from '@/Components/Discover/EntityCard';
+import PoemCard from '@/Components/Discover/PoemCard';
 import type { SongPayload } from '@/types';
 
 interface AlbumCard { id: number; title: string; slug: string; artwork: string | null; artist: string; year: number | null; songs_count: number | null; }
@@ -10,6 +11,7 @@ interface GroupCard { id: number; name: string; slug: string; type: string; imag
 interface ArtistCard { id: number; name: string; slug: string; image: string | null; }
 interface Chip { id: number; name: string; slug: string; icon: string | null; color: string | null; }
 interface OccasionCard { id: number; name: string; slug: string; image: string | null; }
+interface PoemPreview { id: number; title: string; slug: string; summary: string | null; image: string | null; author: string; category: string | null; }
 
 interface Props {
     hero: { title: string; subtitle: string };
@@ -21,6 +23,7 @@ interface Props {
     featuredGroups: GroupCard[];
     featuredArtists: ArtistCard[];
     occasions: OccasionCard[];
+    poems: PoemPreview[];
 }
 
 export default function DiscoverIndex(props: Props) {
@@ -102,6 +105,17 @@ export default function DiscoverIndex(props: Props) {
                                     image={a.image}
                                     aspect="portrait"
                                 />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {props.poems.length > 0 && (
+                    <section>
+                        <SectionHeader title="Poems" href="/poems" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {props.poems.map((p) => (
+                                <PoemCard key={p.id} poem={p} />
                             ))}
                         </div>
                     </section>

@@ -51,6 +51,16 @@ export interface FeaturedGroup {
     image: string | null;
 }
 
+export interface PoemPreview {
+    id: number;
+    title: string;
+    slug: string;
+    summary: string | null;
+    image: string | null;
+    author: string;
+    category: string | null;
+}
+
 export interface HomeProps {
     hero: {
         title: string;
@@ -63,5 +73,6 @@ export interface HomeProps {
     occasions: OccasionCard[];
     trending: SongPayload[];
     featuredGroups: FeaturedGroup[];
+    poems: PoemPreview[];
     nowPlaying: SongPayload | null;
 }

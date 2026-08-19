@@ -11,6 +11,7 @@ use App\Models\HymnBook;
 use App\Models\Language;
 use App\Models\MusicGroup;
 use App\Models\Occasion;
+use App\Models\Poem;
 use App\Models\Song;
 use App\Support\SongPayload;
 use Illuminate\Http\Request;
@@ -50,6 +51,54 @@ class DiscoverController extends Controller
             'occasions' => Occasion::query()->where('is_active', true)->orderBy('sort_order')->limit(8)
                 ->get(['id', 'name', 'slug', 'image_path'])
                 ->map(fn ($o) => ['id' => $o->id, 'name' => $o->name, 'slug' => $o->slug, 'image' => $o->image_path]),
+            'poems' => Poem::published()->with(['artist:id,name,stage_name,slug', 'church:id,name'])
+                ->orderByDesc('is_featured')->orderByDesc('published_at')->limit(6)->get()
+                ->map(fn (Poem $p) => $this->poemCard($p)),
+        ]);
+    }
+
+    public function poems(Request $request): Response
+    {
+        $q = Poem::published()->with(['artist:id,name,stage_name,slug', 'church:id,name', 'category:id,name,slug', 'language:id,name']);
+
+        if ($search = $request->string('q')->trim()->toString()) {
+            $q->where('title', 'like', '%' . $search . '%');
+        }
+        if ($category = $request->string('category')->trim()->toString()) {
+            $q->whereHas('category', fn ($sq) => $sq->where('slug', $category));
+        }
+        if ($language = $request->string('language')->trim()->toString()) {
+            $q->whereHas('language', fn ($sq) => $sq->where('slug', $language));
+        }
+
+        $sort = $request->string('sort', 'newest')->toString();
+        match ($sort) {
+            'popular' => $q->orderByDesc('view_count'),
+            'featured' => $q->orderByDesc('is_featured')->orderByDesc('published_at'),
+            default => $q->orderByDesc('published_at'),
+        };
+
+        $poems = $q->paginate(24)->withQueryString();
+
+        return Inertia::render('Discover/Poems', [
+            'filters' => [
+                'q' => $request->string('q')->toString(),
+                'category' => $request->string('category')->toString(),
+                'language' => $request->string('language')->toString(),
+                'sort' => $sort,
+            ],
+            'facets' => [
+                'categories' => Category::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'slug']),
+                'languages' => Language::query()->orderBy('name')->get(['id', 'name', 'slug']),
+            ],
+            'poems' => [
+                'data' => collect($poems->items())->map(fn (Poem $p) => $this->poemCard($p))->all(),
+                'meta' => [
+                    'current_page' => $poems->currentPage(),
+                    'last_page' => $poems->lastPage(),
+                    'total' => $poems->total(),
+                ],
+            ],
         ]);
     }
 
@@ -380,7 +429,7 @@ class DiscoverController extends Controller
         if ($query === '' || strlen($query) < 2) {
             return Inertia::render('Discover/Search', [
                 'query' => $query,
-                'results' => ['songs' => [], 'albums' => [], 'artists' => [], 'groups' => [], 'churches' => []],
+                'results' => ['songs' => [], 'albums' => [], 'artists' => [], 'groups' => [], 'churches' => [], 'poems' => []],
             ]);
         }
 
@@ -398,6 +447,8 @@ class DiscoverController extends Controller
             ->where('name', 'like', $like)->limit(12)->get();
         $churches = Church::query()->where('is_active', true)
             ->where('name', 'like', $like)->limit(12)->get();
+        $poems = Poem::published()->with(['artist:id,name,stage_name,slug', 'church:id,name', 'category:id,name'])
+            ->where('title', 'like', $like)->orderByDesc('view_count')->limit(12)->get();
 
         return Inertia::render('Discover/Search', [
             'query' => $query,
@@ -424,6 +475,7 @@ class DiscoverController extends Controller
                     'slug' => $c->slug,
                     'image' => $c->image_path,
                 ]),
+                'poems' => $poems->map(fn (Poem $p) => $this->poemCard($p)),
             ],
         ]);
     }
@@ -441,6 +493,21 @@ class DiscoverController extends Controller
                 ?? 'Various',
             'year' => $a->release_year,
             'songs_count' => $a->songs_count ?? null,
+        ];
+    }
+
+    private function poemCard(Poem $p): array
+    {
+        return [
+            'id' => $p->id,
+            'title' => $p->title,
+            'slug' => $p->slug,
+            'summary' => $p->summary,
+            'image' => $p->image_path,
+            'author' => $p->displayAuthor(),
+            'category' => $p->category?->name,
+            'language' => $p->language?->name,
+            'published_at' => optional($p->published_at)->toDateString(),
         ];
     }
 }

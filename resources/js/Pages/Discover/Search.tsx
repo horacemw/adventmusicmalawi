@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import PageHeader from '@/Components/Discover/PageHeader';
 import SongRow from '@/Components/Discover/SongRow';
 import EntityCard from '@/Components/Discover/EntityCard';
+import PoemCard from '@/Components/Discover/PoemCard';
 import { Search as SearchIcon } from 'lucide-react';
 import type { SongPayload } from '@/types';
 
@@ -11,6 +12,7 @@ interface AlbumCard { id: number; title: string; slug: string; artwork: string |
 interface ArtistCard { id: number; name: string; slug: string; image: string | null; is_verified: boolean; }
 interface GroupCard { id: number; name: string; slug: string; type: string; image: string | null; }
 interface ChurchCard { id: number; name: string; slug: string; image: string | null; }
+interface PoemCardData { id: number; title: string; slug: string; summary: string | null; image: string | null; author: string; category: string | null; }
 
 interface Props {
     query: string;
@@ -20,6 +22,7 @@ interface Props {
         artists: ArtistCard[];
         groups: GroupCard[];
         churches: ChurchCard[];
+        poems: PoemCardData[];
     };
 }
 
@@ -39,7 +42,7 @@ export default function Search({ query, results }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [q]);
 
-    const total = results.songs.length + results.albums.length + results.artists.length + results.groups.length + results.churches.length;
+    const total = results.songs.length + results.albums.length + results.artists.length + results.groups.length + results.churches.length + results.poems.length;
     const hasQuery = query.length >= 2;
 
     return (
@@ -120,6 +123,17 @@ export default function Search({ query, results }: Props) {
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {results.churches.map((c) => (
                             <EntityCard key={c.id} href={`/churches/${c.slug}`} name={c.name} image={c.image} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {hasQuery && results.poems.length > 0 && (
+                <section className="mb-6">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-2">Poems</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {results.poems.map((p) => (
+                            <PoemCard key={p.id} poem={p} />
                         ))}
                     </div>
                 </section>
