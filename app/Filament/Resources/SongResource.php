@@ -286,7 +286,7 @@ class SongResource extends Resource
                         'success' => Song::STATUS_PUBLISHED,
                         'danger' => Song::STATUS_REJECTED,
                     ])
-                    ->formatStateUsing(fn (string $s) => ucwords($s)),
+                    ->formatStateUsing(fn (string $state) => ucwords($state)),
                 Tables\Columns\TextColumn::make('stream_count')->label('Plays')->sortable()->numeric(),
                 Tables\Columns\IconColumn::make('is_featured')->label('★')->boolean()->trueIcon('heroicon-s-star')->trueColor('warning'),
                 Tables\Columns\TextColumn::make('published_at')->label('Published')->dateTime('d M Y')->sortable()->toggleable(),

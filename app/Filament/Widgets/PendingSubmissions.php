@@ -27,7 +27,7 @@ class PendingSubmissions extends BaseWidget
                 Tables\Columns\TextColumn::make('user.name')->label('Submitter'),
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors(['warning' => Submission::STATUS_PAID, 'primary' => Submission::STATUS_UNDER_REVIEW])
-                    ->formatStateUsing(fn ($s) => ucwords(str_replace('_', ' ', $s))),
+                    ->formatStateUsing(fn ($state) => ucwords(str_replace('_', ' ', (string) $state))),
                 Tables\Columns\TextColumn::make('created_at')->since()->label('Age'),
             ])
             ->actions([

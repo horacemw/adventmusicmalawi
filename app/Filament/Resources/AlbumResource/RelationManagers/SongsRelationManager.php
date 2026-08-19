@@ -38,7 +38,7 @@ class SongsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('musicGroup.name')->label('Group')->placeholder('—')->toggleable(),
                 Tables\Columns\TextColumn::make('duration_seconds')
                     ->label('Duration')
-                    ->formatStateUsing(fn ($s) => $s ? gmdate($s >= 3600 ? 'H:i:s' : 'i:s', $s) : '—'),
+                    ->formatStateUsing(fn ($state) => $state ? gmdate($state >= 3600 ? 'H:i:s' : 'i:s', (int) $state) : '—'),
                 Tables\Columns\TextColumn::make('stream_count')->label('Plays')->numeric()->sortable(),
                 Tables\Columns\BadgeColumn::make('status')
                     ->colors([

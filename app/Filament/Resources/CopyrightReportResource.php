@@ -73,7 +73,7 @@ class CopyrightReportResource extends Resource
                         'success' => CopyrightReport::STATUS_RESOLVED,
                         'gray' => [CopyrightReport::STATUS_INVALID, CopyrightReport::STATUS_WITHDRAWN],
                     ])
-                    ->formatStateUsing(fn ($s) => ucwords(str_replace('_', ' ', $s))),
+                    ->formatStateUsing(fn ($state) => ucwords(str_replace('_', ' ', (string) $state))),
                 Tables\Columns\TextColumn::make('assignee.name')->label('Assigned to')->placeholder('—'),
                 Tables\Columns\TextColumn::make('created_at')->since()->label('Age'),
             ])

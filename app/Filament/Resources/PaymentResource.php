@@ -50,7 +50,7 @@ class PaymentResource extends Resource
                         'danger' => [Payment::STATUS_FAILED, Payment::STATUS_CANCELLED],
                         'primary' => Payment::STATUS_REFUNDED,
                     ])
-                    ->formatStateUsing(fn (string $s) => ucwords($s)),
+                    ->formatStateUsing(fn (string $state) => ucwords($state)),
                 Tables\Columns\TextColumn::make('provider')->badge(),
                 Tables\Columns\TextColumn::make('payable_type')
                     ->label('For')
