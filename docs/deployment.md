@@ -92,47 +92,13 @@ ssh deploy@<HETZNER_IPV4>
 
 ## Phase 4 — First-time deploy
 
-### 4a. Give the server read access to the private GitHub repo
-
-The repo is private, so the server needs a **deploy key** to clone. On the server (`deploy@mam-prod-1`):
-
-```bash
-# Generate a repo-scoped SSH key
-ssh-keygen -t ed25519 -N '' -C 'mam-prod-deploy-key' -f ~/.ssh/github_deploy
-cat ~/.ssh/github_deploy.pub
-```
-
-Copy the printed public key line. In your browser:
-- Open `https://github.com/horacemw/adventmusicmalawi/settings/keys/new`
-- Title: `mam-prod-1`
-- Key: paste the public key
-- **Do NOT** tick "Allow write access" — read-only is enough
-- Save
-
-Then tell SSH to use this key for GitHub:
-
-```bash
-cat >> ~/.ssh/config <<'EOF'
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/github_deploy
-    IdentitiesOnly yes
-EOF
-
-# Trust GitHub's host key
-ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-# Smoke-test the deploy key
-ssh -T git@github.com
-# Expected: "Hi horacemw/adventmusicmalawi! You've successfully authenticated, ..."
-```
-
-### 4b. Clone and configure
+Repo is currently public, so no deploy key is needed. If you make it
+private later, follow the "SSH deploy key" appendix at the bottom of
+this doc first.
 
 ```bash
 cd /srv/malawiadventistmusic
-git clone git@github.com:horacemw/adventmusicmalawi.git .
+git clone https://github.com/horacemw/adventmusicmalawi.git .
 
 # Create production .env
 cp .env.production.example .env
@@ -232,3 +198,38 @@ ssh deploy@<HETZNER_IPV4> "cd /srv/malawiadventistmusic && ./deployment/rollback
 - Skip cert renewal — check certbot logs weekly for the first month.
 - Deploy directly to `main` without a local `npm run build` + `php artisan test` first (once tests exist).
 - Force-push to a shared branch after the site is live.
+
+---
+
+## Appendix — Switching the repo to private
+
+If you later flip `horacemw/adventmusicmalawi` to private, the server can no longer clone over HTTPS anonymously. Set up an SSH deploy key:
+
+```bash
+# On the server as deploy user
+ssh-keygen -t ed25519 -N '' -C 'mam-prod-deploy-key' -f ~/.ssh/github_deploy
+cat ~/.ssh/github_deploy.pub
+```
+
+Copy the public key, then in your browser:
+- `https://github.com/horacemw/adventmusicmalawi/settings/keys/new`
+- Title: `mam-prod-1`
+- Paste the key, leave "Allow write access" **unchecked**, save.
+
+Then on the server:
+
+```bash
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/github_deploy
+    IdentitiesOnly yes
+EOF
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+ssh -T git@github.com   # should say "Hi horacemw/adventmusicmalawi!"
+
+# Switch the origin URL to SSH
+cd /srv/malawiadventistmusic
+git remote set-url origin git@github.com:horacemw/adventmusicmalawi.git
+```
