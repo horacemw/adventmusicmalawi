@@ -21,7 +21,8 @@ RUN composer install \
     --prefer-dist \
     --no-scripts \
     --no-progress \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-reqs
 
 # ---------- Stage 3: PHP-FPM runtime ----------
 FROM php:8.4-fpm-bookworm AS app
