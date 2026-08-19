@@ -76,6 +76,7 @@ class SubmissionController extends Controller
         // given step some fields will still be empty. All fields are optional here —
         // required fields are enforced at submit-for-payment (SubmissionService::markAwaitingPayment).
         $data = $request->validate([
+            'kind' => 'nullable|in:song,album,poem',
             'submitter_name' => 'nullable|string|max:255',
             'submitter_email' => 'nullable|email|max:255',
             'submitter_phone' => 'nullable|string|max:32',
@@ -126,24 +127,33 @@ class SubmissionController extends Controller
 
         $maxAudioMb = (int) (Setting::get('uploads.max_audio_mb') ?? 50);
         $maxImageMb = (int) (Setting::get('uploads.max_image_mb') ?? 5);
+        $maxZipMb = (int) (Setting::get('uploads.max_zip_mb') ?? 200);
         $allowedAudio = (array) (Setting::get('uploads.audio_mime_types') ?? [
             'audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/wav', 'audio/x-wav',
         ]);
+
+        // Album submissions upload a ZIP as their "audio"; poem submissions upload a DOCX/PDF.
+        $audioTypes = match ($submission->kind) {
+            Submission::KIND_ALBUM => 'application/zip,application/x-zip-compressed,application/octet-stream',
+            Submission::KIND_POEM => 'application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,audio/mpeg',
+            default => implode(',', $allowedAudio),
+        };
+        $audioMaxMb = $submission->kind === Submission::KIND_ALBUM ? $maxZipMb : $maxAudioMb;
 
         $kind = $request->input('kind');
         $rules = match ($kind) {
             SubmissionFile::KIND_AUDIO => [
                 'file' => [
                     'required', 'file',
-                    'max:'.($maxAudioMb * 1024),
-                    'mimetypes:'.implode(',', $allowedAudio),
+                    'max:'.($audioMaxMb * 1024),
+                    'mimetypes:'.$audioTypes,
                 ],
             ],
             SubmissionFile::KIND_ARTWORK, SubmissionFile::KIND_ARTIST_IMAGE => [
                 'file' => ['required', 'file', 'image', 'max:'.($maxImageMb * 1024)],
             ],
             SubmissionFile::KIND_PERMISSION => [
-                'file' => ['required', 'file', 'max:'.($maxImageMb * 1024), 'mimes:pdf,png,jpg,jpeg'],
+                'file' => ['required', 'file', 'max:'.($maxImageMb * 2 * 1024), 'mimes:pdf,doc,docx,png,jpg,jpeg'],
             ],
             default => [],
         };
@@ -186,7 +196,10 @@ class SubmissionController extends Controller
             return back()->withErrors(['submission' => $e->getMessage()]);
         }
 
-        return redirect()->away($result['checkout_url']);
+        // Inertia's XHR client silently swallows plain redirect()->away() to
+        // external hosts. Inertia::location sets the X-Inertia-Location header
+        // that the client understands as a full-browser navigation.
+        return Inertia::location($result['checkout_url']);
     }
 
     private function showWizard(Submission $submission): Response
@@ -198,6 +211,7 @@ class SubmissionController extends Controller
                 'id' => $submission->id,
                 'reference' => $submission->reference,
                 'status' => $submission->status,
+                'kind' => $submission->kind ?: 'song',
                 'submitter_name' => $submission->submitter_name,
                 'submitter_email' => $submission->submitter_email,
                 'submitter_phone' => $submission->submitter_phone,
@@ -240,9 +254,11 @@ class SubmissionController extends Controller
                 'regions' => Region::orderBy('name')->get(['id', 'name']),
                 'districts' => District::orderBy('name')->get(['id', 'name', 'region_id']),
             ],
-            'fee' => [
-                'amount' => (int) (Setting::get('submissions.fee_amount') ?? config('services.submissions.fee_amount', 15000)),
+            'fees' => [
                 'currency' => (string) (Setting::get('submissions.fee_currency') ?? config('services.submissions.fee_currency', 'MWK')),
+                'song' => \App\Services\Payments\PaymentInitiationService::feeFor('song'),
+                'album' => \App\Services\Payments\PaymentInitiationService::feeFor('album'),
+                'poem' => \App\Services\Payments\PaymentInitiationService::feeFor('poem'),
             ],
         ]);
     }

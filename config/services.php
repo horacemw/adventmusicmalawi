@@ -47,8 +47,12 @@ return [
     ],
 
     'submissions' => [
-        'fee_amount' => (int) env('SUBMISSION_FEE_AMOUNT', 15000),
         'fee_currency' => env('SUBMISSION_FEE_CURRENCY', 'MWK'),
+        'fees' => [
+            'song' => (int) env('SUBMISSION_FEE_SONG', 5500),
+            'album' => (int) env('SUBMISSION_FEE_ALBUM', 15000),
+            'poem' => (int) env('SUBMISSION_FEE_POEM', 0),
+        ],
     ],
 
 ];

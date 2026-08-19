@@ -15,6 +15,10 @@ class Submission extends Model
 {
     use SoftDeletes;
 
+    public const KIND_SONG = 'song';
+    public const KIND_ALBUM = 'album';
+    public const KIND_POEM = 'poem';
+
     public const STATUS_DRAFT = 'draft';
     public const STATUS_AWAITING_PAYMENT = 'awaiting_payment';
     public const STATUS_PAYMENT_PENDING = 'payment_pending';
@@ -27,7 +31,7 @@ class Submission extends Model
     public const STATUS_WITHDRAWN = 'withdrawn';
 
     protected $fillable = [
-        'reference', 'user_id',
+        'reference', 'kind', 'user_id',
         'submitter_name', 'submitter_email', 'submitter_phone',
         'song_title', 'artist_name', 'group_name', 'choir_name', 'church_name', 'album_title',
         'release_year', 'description',

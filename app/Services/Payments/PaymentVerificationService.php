@@ -63,8 +63,10 @@ class PaymentVerificationService
             return $payment->refresh();
         }
 
-        // Amount + currency verification against expected fee
-        $expectedAmount = (int) (Setting::get('submissions.fee_amount') ?? config('services.submissions.fee_amount', 15000));
+        // Amount + currency verification against expected fee (per submission kind)
+        $expectedAmount = $payment->payable instanceof Submission
+            ? PaymentInitiationService::feeFor($payment->payable->kind ?: Submission::KIND_SONG)
+            : (int) $payment->amount;
         $expectedCurrency = (string) (Setting::get('submissions.fee_currency') ?? config('services.submissions.fee_currency', 'MWK'));
 
         if ($result->amount === null || $result->amount < $expectedAmount) {

@@ -2,9 +2,12 @@ import { router, useForm } from '@inertiajs/react';
 import clsx from 'clsx';
 import {
     ArrowRight,
+    BookOpen,
     Check,
     CheckCircle2,
+    Disc3,
     FileAudio,
+    Gift,
     ImageIcon,
     Loader2,
     Music2,
@@ -19,11 +22,14 @@ import AppLayout from '@/Layouts/AppLayout';
 interface Option { id: number; name: string; }
 interface DistrictOption extends Option { region_id: number | null; }
 
+type SubmissionKind = 'song' | 'album' | 'poem';
+
 interface WizardProps {
     submission: {
         id: number;
         reference: string;
         status: string;
+        kind: SubmissionKind;
         submitter_name: string;
         submitter_email: string;
         submitter_phone: string | null;
@@ -66,7 +72,12 @@ interface WizardProps {
         regions: Option[];
         districts: DistrictOption[];
     };
-    fee: { amount: number; currency: string; };
+    fees: {
+        currency: string;
+        song: number;
+        album: number;
+        poem: number;
+    };
 }
 
 const STEPS = [
@@ -125,10 +136,12 @@ function money(n: number, ccy: string): string {
     return new Intl.NumberFormat('en-MW').format(n) + ' ' + ccy;
 }
 
-export default function Wizard({ submission, options, fee }: WizardProps) {
+export default function Wizard({ submission, options, fees }: WizardProps) {
     const [step, setStep] = useState<number>(submission.song_title ? 2 : 1);
+    const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
     const form = useForm({
+        kind: submission.kind || ('song' as SubmissionKind),
         submitter_name: submission.submitter_name || '',
         submitter_email: submission.submitter_email || '',
         submitter_phone: submission.submitter_phone || '',
@@ -186,9 +199,19 @@ export default function Wizard({ submission, options, fee }: WizardProps) {
         const data = new FormData();
         data.append('file', file);
         data.append('kind', kind);
+        setUploadProgress((p) => ({ ...p, [kind]: 0 }));
         router.post(`/submissions/${submission.id}/files`, data, {
             preserveScroll: true,
             forceFormData: true,
+            onProgress: (evt) => {
+                if (evt) setUploadProgress((p) => ({ ...p, [kind]: Math.round(evt.percentage ?? 0) }));
+            },
+            onFinish: () => {
+                setUploadProgress((p) => {
+                    const { [kind]: _, ...rest } = p;
+                    return rest;
+                });
+            },
         });
     };
 
@@ -209,15 +232,18 @@ export default function Wizard({ submission, options, fee }: WizardProps) {
         router.post(`/submissions/${submission.id}/pay`, {}, { preserveScroll: false });
     };
 
+    const currentFee = fees[form.data.kind] ?? fees.song;
+    const kindLabel = { song: 'Song', album: 'Album', poem: 'Poem' }[form.data.kind] ?? 'Song';
+
     return (
         <AppLayout title="Submit music">
             <div className="max-w-3xl mx-auto space-y-6">
                 <header>
                     <p className="text-xs font-semibold uppercase tracking-widest text-brand-700 mb-1">
-                        Submit your music
+                        Submit your {kindLabel.toLowerCase()}
                     </p>
                     <h1 className="text-2xl md:text-3xl font-bold text-ink">
-                        Share your song with Malawi
+                        Share your {kindLabel.toLowerCase()} with Malawi
                     </h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Reference{' '}
@@ -226,6 +252,43 @@ export default function Wizard({ submission, options, fee }: WizardProps) {
                         </span>
                     </p>
                 </header>
+
+                {/* Kind picker */}
+                <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {(['song', 'album', 'poem'] as const).map((k) => {
+                        const cfg = {
+                            song: { icon: Music2, label: 'Single song', desc: 'One track, one MP3' },
+                            album: { icon: Disc3, label: 'Album', desc: 'Multiple tracks (upload a ZIP)' },
+                            poem: { icon: BookOpen, label: 'Poem', desc: 'Written or spoken word' },
+                        }[k];
+                        const Icon = cfg.icon;
+                        const active = form.data.kind === k;
+                        return (
+                            <button
+                                key={k}
+                                type="button"
+                                onClick={() => { form.setData('kind', k); save(); }}
+                                className={clsx(
+                                    'text-left rounded-2xl border p-4 transition-all',
+                                    active
+                                        ? 'border-brand-500 bg-brand-50 ring-2 ring-brand-500'
+                                        : 'border-slate-200 bg-white hover:border-slate-300',
+                                )}
+                            >
+                                <span className={clsx('h-9 w-9 rounded-lg flex items-center justify-center mb-2', active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500')}>
+                                    <Icon className="h-4 w-4" />
+                                </span>
+                                <p className={clsx('text-sm font-semibold', active ? 'text-brand-800' : 'text-ink')}>
+                                    {cfg.label}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-0.5">{cfg.desc}</p>
+                                <p className={clsx('text-sm font-bold mt-2', active ? 'text-brand-700' : 'text-slate-600')}>
+                                    {fees[k] === 0 ? 'Free' : money(fees[k], fees.currency)}
+                                </p>
+                            </button>
+                        );
+                    })}
+                </section>
 
                 <StepIndicator current={step} />
 
@@ -343,31 +406,50 @@ export default function Wizard({ submission, options, fee }: WizardProps) {
                         <Section
                             icon={<Upload className="h-5 w-5" />}
                             title="Upload media"
-                            hint="Audio is required. Artwork is highly recommended."
+                            hint={form.data.kind === 'album'
+                                ? 'Upload a ZIP containing your album tracks. Artwork is highly recommended.'
+                                : form.data.kind === 'poem'
+                                ? 'Upload a Word document (.docx) or PDF with your poem. Audio recording is optional.'
+                                : 'Audio is required. Artwork is highly recommended.'}
                         >
                             <UploadRow
-                                label="Audio (MP3, AAC, WAV) — required"
+                                label={form.data.kind === 'album'
+                                    ? 'Album ZIP (MP3s inside) — required'
+                                    : form.data.kind === 'poem'
+                                    ? 'Poem document (DOCX/PDF) — required'
+                                    : 'Audio (MP3, AAC, WAV) — required'}
                                 icon={<FileAudio className="h-5 w-5" />}
                                 file={audioFile}
                                 onUpload={uploadFile('audio')}
                                 onDelete={audioFile ? () => deleteFile(audioFile.id) : undefined}
-                                accept="audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/x-wav"
+                                accept={form.data.kind === 'album'
+                                    ? 'application/zip,application/x-zip-compressed'
+                                    : form.data.kind === 'poem'
+                                    ? 'application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,audio/mpeg'
+                                    : 'audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/x-wav'}
+                                progress={uploadProgress.audio}
+                                hint={form.data.kind === 'album'
+                                    ? 'ZIP with your MP3 tracks — up to 200 MB'
+                                    : undefined}
                             />
                             <UploadRow
-                                label="Album artwork (JPEG/PNG)"
+                                label={form.data.kind === 'album' ? 'Album cover artwork (JPEG/PNG)' : 'Cover artwork (JPEG/PNG)'}
                                 icon={<ImageIcon className="h-5 w-5" />}
                                 file={artworkFile}
                                 onUpload={uploadFile('artwork')}
                                 onDelete={artworkFile ? () => deleteFile(artworkFile.id) : undefined}
                                 accept="image/jpeg,image/png,image/webp"
+                                progress={uploadProgress.artwork}
                             />
                             <UploadRow
-                                label="Permission document (optional PDF/image)"
-                                icon={<ShieldCheck className="h-5 w-5" />}
+                                label="Lyrics / notes (optional — DOCX or PDF)"
+                                icon={<BookOpen className="h-5 w-5" />}
                                 file={permissionFile}
                                 onUpload={uploadFile('permission_document')}
                                 onDelete={permissionFile ? () => deleteFile(permissionFile.id) : undefined}
-                                accept="application/pdf,image/png,image/jpeg"
+                                accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,image/png,image/jpeg"
+                                progress={uploadProgress.permission_document}
+                                hint="Word document (.docx) or PDF works best"
                             />
                         </Section>
                     )}
@@ -449,7 +531,7 @@ export default function Wizard({ submission, options, fee }: WizardProps) {
                                 </span>
                                 <div>
                                     <p className="text-sm font-semibold">
-                                        Submission fee: {money(fee.amount, fee.currency)}
+                                        Submission fee: {(currentFee === 0 ? 'Free' : money(currentFee, fees.currency))}
                                     </p>
                                     <p className="text-xs text-brand-800/80">
                                         You'll pay through PayChangu. A moderator will review your submission after payment.
@@ -467,7 +549,7 @@ export default function Wizard({ submission, options, fee }: WizardProps) {
                         >
                             <div className="rounded-xl border border-slate-200 p-5">
                                 <p className="text-sm text-slate-600 mb-1">Amount due</p>
-                                <p className="text-2xl font-bold text-ink">{money(fee.amount, fee.currency)}</p>
+                                <p className="text-2xl font-bold text-ink">{(currentFee === 0 ? 'Free' : money(currentFee, fees.currency))}</p>
                             </div>
                             {!canProceedToPayment && (
                                 <div className="rounded-xl bg-rose-50 text-rose-900 p-4 text-sm">
@@ -631,6 +713,8 @@ function UploadRow({
     onUpload,
     onDelete,
     accept,
+    hint,
+    progress,
 }: {
     label: string;
     icon: React.ReactNode;
@@ -638,37 +722,51 @@ function UploadRow({
     onUpload: (e: ChangeEvent<HTMLInputElement>) => void;
     onDelete?: () => void;
     accept?: string;
+    hint?: string;
+    progress?: number;
 }) {
+    const isUploading = typeof progress === 'number';
+
     return (
-        <div className="rounded-xl border border-slate-200 p-4 flex items-center gap-4">
-            <span className="h-10 w-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                {icon}
-            </span>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-ink">{label}</p>
-                {file ? (
-                    <p className="text-xs text-slate-500 truncate">
-                        {file.original_name} · {formatBytes(file.size_bytes)}
-                    </p>
-                ) : (
-                    <p className="text-xs text-slate-400">No file selected</p>
+        <div className="rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center gap-4">
+                <span className="h-10 w-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
+                    {icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-ink">{label}</p>
+                    {file ? (
+                        <p className="text-xs text-slate-500 truncate">
+                            {file.original_name} · {formatBytes(file.size_bytes)}
+                        </p>
+                    ) : (
+                        <p className="text-xs text-slate-400">{hint ?? 'No file selected'}</p>
+                    )}
+                </div>
+                {file && onDelete && !isUploading && (
+                    <button
+                        type="button"
+                        onClick={onDelete}
+                        className="p-2 text-slate-400 hover:text-rose-600"
+                        aria-label="Remove"
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </button>
                 )}
+                <label className={clsx('cursor-pointer inline-flex items-center gap-2 rounded-full text-xs font-semibold px-3 py-1.5', isUploading ? 'bg-slate-200 text-slate-500 cursor-wait' : 'bg-slate-100 hover:bg-slate-200 text-slate-700')}>
+                    {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    {isUploading ? `${progress}%` : file ? 'Replace' : 'Upload'}
+                    <input type="file" accept={accept} onChange={onUpload} className="hidden" disabled={isUploading} />
+                </label>
             </div>
-            {file && onDelete && (
-                <button
-                    type="button"
-                    onClick={onDelete}
-                    className="p-2 text-slate-400 hover:text-rose-600"
-                    aria-label="Remove"
-                >
-                    <Trash2 className="h-4 w-4" />
-                </button>
+            {isUploading && (
+                <div className="mt-3 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                        className="h-full bg-brand-500 transition-[width] duration-150"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
             )}
-            <label className="cursor-pointer inline-flex items-center gap-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5">
-                <Upload className="h-3.5 w-3.5" />
-                {file ? 'Replace' : 'Upload'}
-                <input type="file" accept={accept} onChange={onUpload} className="hidden" />
-            </label>
         </div>
     );
 }

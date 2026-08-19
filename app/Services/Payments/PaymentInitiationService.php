@@ -21,6 +21,13 @@ class PaymentInitiationService
         private readonly SubmissionService $submissions,
     ) {}
 
+    public static function feeFor(string $kind): int
+    {
+        $fees = config('services.submissions.fees', []);
+        $override = Setting::get('submissions.fee_'.$kind);
+        return (int) ($override ?? ($fees[$kind] ?? 5500));
+    }
+
     /**
      * Kick off a PayChangu Standard Checkout session for a submission.
      * Returns the URL the caller should redirect the user to.
@@ -33,7 +40,7 @@ class PaymentInitiationService
             ->latest()
             ->first();
 
-        $amount = (int) (Setting::get('submissions.fee_amount') ?? config('services.submissions.fee_amount', 15000));
+        $amount = self::feeFor($submission->kind ?: Submission::KIND_SONG);
         $currency = (string) (Setting::get('submissions.fee_currency') ?? config('services.submissions.fee_currency', 'MWK'));
 
         if (!$payment) {
