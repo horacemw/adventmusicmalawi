@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -8,6 +8,7 @@ use App\Models\Church;
 use App\Models\MusicGroup;
 use App\Models\Poem;
 use App\Models\Song;
+use App\Support\MediaUrl;
 use App\Support\SongPayload;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,8 +47,8 @@ class ProfilesController extends Controller
                 'slug' => $song->slug,
                 'description' => $song->description,
                 'lyrics' => $song->lyrics,
-                'artwork' => $song->artwork_path,
-                'audio' => $song->audio_path,
+                'artwork' => MediaUrl::url($song->artwork_path),
+                'audio' => MediaUrl::url($song->audio_path),
                 'duration' => $song->duration_seconds,
                 'streams' => $song->stream_count,
                 'likes' => $song->like_count,
@@ -59,18 +60,18 @@ class ProfilesController extends Controller
                 'group' => $song->musicGroup ? [
                     'name' => $song->musicGroup->name,
                     'slug' => $song->musicGroup->slug,
-                    'image' => $song->musicGroup->image_path,
+                    'image' => MediaUrl::url($song->musicGroup->image_path),
                 ] : null,
                 'artist' => $song->artist ? [
                     'name' => $song->artist->stage_name ?: $song->artist->name,
                     'slug' => $song->artist->slug,
-                    'image' => $song->artist->image_path,
+                    'image' => MediaUrl::url($song->artist->image_path),
                 ] : null,
                 'church' => $song->church ? ['name' => $song->church->name, 'slug' => $song->church->slug] : null,
                 'album' => $song->album ? [
                     'title' => $song->album->title,
                     'slug' => $song->album->slug,
-                    'artwork' => $song->album->artwork_path,
+                    'artwork' => MediaUrl::url($song->album->artwork_path),
                 ] : null,
                 'language' => $song->language?->name,
                 'genre' => $song->genre?->name,
@@ -107,7 +108,7 @@ class ProfilesController extends Controller
                 'title' => $album->title,
                 'slug' => $album->slug,
                 'description' => $album->description,
-                'artwork' => $album->artwork_path,
+                'artwork' => MediaUrl::url($album->artwork_path),
                 'release_year' => $album->release_year,
                 'released_at' => optional($album->released_at)->toDateString(),
                 'label' => $album->label,
@@ -116,12 +117,12 @@ class ProfilesController extends Controller
                 'artist' => $album->artist ? [
                     'name' => $album->artist->stage_name ?: $album->artist->name,
                     'slug' => $album->artist->slug,
-                    'image' => $album->artist->image_path,
+                    'image' => MediaUrl::url($album->artist->image_path),
                 ] : null,
                 'group' => $album->musicGroup ? [
                     'name' => $album->musicGroup->name,
                     'slug' => $album->musicGroup->slug,
-                    'image' => $album->musicGroup->image_path,
+                    'image' => MediaUrl::url($album->musicGroup->image_path),
                 ] : null,
                 'church' => $album->church ? [
                     'name' => $album->church->name,
@@ -157,8 +158,8 @@ class ProfilesController extends Controller
                 'real_name' => $artist->name,
                 'slug' => $artist->slug,
                 'bio' => $artist->bio,
-                'image' => $artist->image_path,
-                'cover' => $artist->cover_path,
+                'image' => MediaUrl::url($artist->image_path),
+                'cover' => MediaUrl::url($artist->cover_path),
                 'is_verified' => (bool) $artist->is_verified,
                 'is_featured' => (bool) $artist->is_featured,
                 'social_links' => $artist->social_links ?? [],
@@ -171,7 +172,7 @@ class ProfilesController extends Controller
                 'id' => $a->id,
                 'title' => $a->title,
                 'slug' => $a->slug,
-                'artwork' => $a->artwork_path,
+                'artwork' => MediaUrl::url($a->artwork_path),
                 'year' => $a->release_year,
             ]),
         ]);
@@ -203,8 +204,8 @@ class ProfilesController extends Controller
                 'slug' => $group->slug,
                 'type' => $group->type,
                 'description' => $group->description,
-                'image' => $group->image_path,
-                'cover' => $group->cover_path,
+                'image' => MediaUrl::url($group->image_path),
+                'cover' => MediaUrl::url($group->cover_path),
                 'founded_year' => $group->founded_year,
                 'is_verified' => (bool) $group->is_verified,
                 'is_featured' => (bool) $group->is_featured,
@@ -224,7 +225,7 @@ class ProfilesController extends Controller
                 'id' => $a->id,
                 'title' => $a->title,
                 'slug' => $a->slug,
-                'artwork' => $a->artwork_path,
+                'artwork' => MediaUrl::url($a->artwork_path),
                 'year' => $a->release_year,
             ]),
         ]);
@@ -257,8 +258,8 @@ class ProfilesController extends Controller
                 'slug' => $poem->slug,
                 'summary' => $poem->summary,
                 'body' => $poem->body,
-                'image' => $poem->image_path,
-                'document' => $poem->document_path,
+                'image' => MediaUrl::url($poem->image_path),
+                'document' => MediaUrl::url($poem->document_path),
                 'allow_download' => (bool) $poem->allow_download,
                 'is_featured' => (bool) $poem->is_featured,
                 'view_count' => $poem->view_count,
@@ -268,7 +269,7 @@ class ProfilesController extends Controller
                 'artist' => $poem->artist ? [
                     'name' => $poem->artist->stage_name ?: $poem->artist->name,
                     'slug' => $poem->artist->slug,
-                    'image' => $poem->artist->image_path,
+                    'image' => MediaUrl::url($poem->artist->image_path),
                 ] : null,
                 'church' => $poem->church ? [
                     'name' => $poem->church->name,
@@ -282,7 +283,7 @@ class ProfilesController extends Controller
                 'title' => $p->title,
                 'slug' => $p->slug,
                 'summary' => $p->summary,
-                'image' => $p->image_path,
+                'image' => MediaUrl::url($p->image_path),
                 'author' => $p->displayAuthor(),
             ]),
         ]);
@@ -310,8 +311,8 @@ class ProfilesController extends Controller
                 'name' => $church->name,
                 'slug' => $church->slug,
                 'description' => $church->description,
-                'image' => $church->image_path,
-                'cover' => $church->cover_path,
+                'image' => MediaUrl::url($church->image_path),
+                'cover' => MediaUrl::url($church->cover_path),
                 'address' => $church->address,
                 'is_verified' => (bool) $church->is_verified,
                 'region' => $church->region?->name,
@@ -322,13 +323,13 @@ class ProfilesController extends Controller
                 'name' => $g->name,
                 'slug' => $g->slug,
                 'type' => $g->type,
-                'image' => $g->image_path,
+                'image' => MediaUrl::url($g->image_path),
             ]),
             'artists' => $artists->map(fn (Artist $a) => [
                 'id' => $a->id,
                 'name' => $a->stage_name ?: $a->name,
                 'slug' => $a->slug,
-                'image' => $a->image_path,
+                'image' => MediaUrl::url($a->image_path),
             ]),
             'songs' => $songs->map(fn (Song $s) => SongPayload::from($s)),
         ]);

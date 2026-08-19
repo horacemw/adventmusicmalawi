@@ -8,6 +8,8 @@ use App\Models\MusicGroup;
 use App\Models\Occasion;
 use App\Models\Poem;
 use App\Models\Song;
+use App\Support\MediaUrl;
+use App\Support\SongPayload;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,13 +40,13 @@ class HomeController extends Controller
                 ->orderByDesc('published_at')
                 ->limit(6)
                 ->get()
-                ->map(fn (Song $s) => $this->songPayload($s)),
+                ->map(fn (Song $s) => SongPayload::from($s)),
             'topSongs' => Song::published()
                 ->with(['musicGroup:id,name,slug', 'artist:id,name,slug', 'church:id,name'])
                 ->orderByDesc('stream_count')
                 ->limit(8)
                 ->get()
-                ->map(fn (Song $s, int $idx) => $this->songPayload($s, $idx + 1)),
+                ->map(fn (Song $s, int $idx) => SongPayload::from($s, $idx + 1)),
             'occasions' => Occasion::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
@@ -54,14 +56,14 @@ class HomeController extends Controller
                     'id' => $o->id,
                     'name' => $o->name,
                     'slug' => $o->slug,
-                    'image' => $o->image_path,
+                    'image' => MediaUrl::url($o->image_path),
                 ]),
             'trending' => Song::published()
                 ->with(['musicGroup:id,name,slug', 'artist:id,name,slug', 'church:id,name'])
                 ->orderByDesc('like_count')
                 ->limit(6)
                 ->get()
-                ->map(fn (Song $s, int $idx) => $this->songPayload($s, $idx + 1)),
+                ->map(fn (Song $s, int $idx) => SongPayload::from($s, $idx + 1)),
             'featuredGroups' => MusicGroup::query()
                 ->where('is_active', true)
                 ->orderByDesc('is_featured')
@@ -72,7 +74,7 @@ class HomeController extends Controller
                     'name' => $g->name,
                     'slug' => $g->slug,
                     'type' => $g->type,
-                    'image' => $g->image_path,
+                    'image' => MediaUrl::url($g->image_path),
                 ]),
             'poems' => Poem::published()->with(['artist:id,name,stage_name,slug', 'church:id,name', 'category:id,name'])
                 ->orderByDesc('is_featured')->orderByDesc('published_at')->limit(3)->get()
@@ -81,7 +83,7 @@ class HomeController extends Controller
                     'title' => $p->title,
                     'slug' => $p->slug,
                     'summary' => $p->summary,
-                    'image' => $p->image_path,
+                    'image' => MediaUrl::url($p->image_path),
                     'author' => $p->displayAuthor(),
                     'category' => $p->category?->name,
                 ]),
@@ -93,24 +95,8 @@ class HomeController extends Controller
                     ->first()
                     ?? Song::published()->orderByDesc('stream_count')->first();
 
-                return $s ? $this->songPayload($s) : null;
+                return $s ? SongPayload::from($s) : null;
             })(),
         ]);
-    }
-
-    private function songPayload(Song $s, ?int $rank = null): array
-    {
-        return [
-            'id' => $s->id,
-            'title' => $s->title ?? '—',
-            'slug' => $s->slug,
-            'artist' => $s->displayArtist(),
-            'artwork' => $s->artwork_path,
-            'duration' => $s->duration_seconds,
-            'audio' => $s->audio_path,
-            'streams' => $s->stream_count,
-            'likes' => $s->like_count,
-            'rank' => $rank,
-        ];
     }
 }

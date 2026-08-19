@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -13,6 +13,7 @@ use App\Models\MusicGroup;
 use App\Models\Occasion;
 use App\Models\Poem;
 use App\Models\Song;
+use App\Support\MediaUrl;
 use App\Support\SongPayload;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -44,13 +45,13 @@ class DiscoverController extends Controller
                 ->map(fn (Album $a) => $this->albumCard($a)),
             'featuredGroups' => MusicGroup::query()->where('is_active', true)
                 ->orderByDesc('is_featured')->orderByDesc('is_verified')->limit(8)->get(['id', 'name', 'slug', 'type', 'image_path'])
-                ->map(fn ($g) => ['id' => $g->id, 'name' => $g->name, 'slug' => $g->slug, 'type' => $g->type, 'image' => $g->image_path]),
+                ->map(fn ($g) => ['id' => $g->id, 'name' => $g->name, 'slug' => $g->slug, 'type' => $g->type, 'image' => MediaUrl::url($g->image_path)]),
             'featuredArtists' => Artist::query()->where('is_active', true)
                 ->orderByDesc('is_featured')->orderByDesc('is_verified')->limit(8)->get(['id', 'name', 'stage_name', 'slug', 'image_path'])
-                ->map(fn ($a) => ['id' => $a->id, 'name' => $a->stage_name ?: $a->name, 'slug' => $a->slug, 'image' => $a->image_path]),
+                ->map(fn ($a) => ['id' => $a->id, 'name' => $a->stage_name ?: $a->name, 'slug' => $a->slug, 'image' => MediaUrl::url($a->image_path)]),
             'occasions' => Occasion::query()->where('is_active', true)->orderBy('sort_order')->limit(8)
                 ->get(['id', 'name', 'slug', 'image_path'])
-                ->map(fn ($o) => ['id' => $o->id, 'name' => $o->name, 'slug' => $o->slug, 'image' => $o->image_path]),
+                ->map(fn ($o) => ['id' => $o->id, 'name' => $o->name, 'slug' => $o->slug, 'image' => MediaUrl::url($o->image_path)]),
             'poems' => Poem::published()->with(['artist:id,name,stage_name,slug', 'church:id,name'])
                 ->orderByDesc('is_featured')->orderByDesc('published_at')->limit(6)->get()
                 ->map(fn (Poem $p) => $this->poemCard($p)),
@@ -223,7 +224,7 @@ class DiscoverController extends Controller
                     'id' => $a->id,
                     'name' => $a->stage_name ?: $a->name,
                     'slug' => $a->slug,
-                    'image' => $a->image_path,
+                    'image' => MediaUrl::url($a->image_path),
                     'is_verified' => $a->is_verified,
                     'songs_count' => $a->songs_count,
                 ])->all(),
@@ -279,7 +280,7 @@ class DiscoverController extends Controller
                     'name' => $g->name,
                     'slug' => $g->slug,
                     'type' => $g->type,
-                    'image' => $g->image_path,
+                    'image' => MediaUrl::url($g->image_path),
                     'is_verified' => $g->is_verified,
                     'church' => $g->church?->name,
                     'songs_count' => $g->songs_count,
@@ -314,7 +315,7 @@ class DiscoverController extends Controller
                     'id' => $c->id,
                     'name' => $c->name,
                     'slug' => $c->slug,
-                    'image' => $c->image_path,
+                    'image' => MediaUrl::url($c->image_path),
                     'is_verified' => $c->is_verified,
                     'region' => $c->region?->name,
                     'district' => $c->district?->name,
@@ -367,7 +368,7 @@ class DiscoverController extends Controller
                 'name' => $o->name,
                 'slug' => $o->slug,
                 'description' => $o->description,
-                'image' => $o->image_path,
+                'image' => MediaUrl::url($o->image_path),
                 'songs_count' => $o->songs_count,
             ]),
         ]);
@@ -388,7 +389,7 @@ class DiscoverController extends Controller
                 'name' => $occasion->name,
                 'slug' => $occasion->slug,
                 'description' => $occasion->description,
-                'image' => $occasion->image_path,
+                'image' => MediaUrl::url($occasion->image_path),
             ],
             'songs' => [
                 'data' => collect($songs->items())->map(fn (Song $s) => SongPayload::from($s))->all(),
@@ -416,7 +417,7 @@ class DiscoverController extends Controller
                 'language' => $b->language?->name,
                 'publisher' => $b->publisher,
                 'published_year' => $b->published_year,
-                'cover' => $b->cover_path,
+                'cover' => MediaUrl::url($b->cover_path),
                 'hymns_count' => $b->hymns_count,
             ]),
         ]);
@@ -459,7 +460,7 @@ class DiscoverController extends Controller
                     'id' => $a->id,
                     'name' => $a->stage_name ?: $a->name,
                     'slug' => $a->slug,
-                    'image' => $a->image_path,
+                    'image' => MediaUrl::url($a->image_path),
                     'is_verified' => $a->is_verified,
                 ]),
                 'groups' => $groups->map(fn (MusicGroup $g) => [
@@ -467,13 +468,13 @@ class DiscoverController extends Controller
                     'name' => $g->name,
                     'slug' => $g->slug,
                     'type' => $g->type,
-                    'image' => $g->image_path,
+                    'image' => MediaUrl::url($g->image_path),
                 ]),
                 'churches' => $churches->map(fn (Church $c) => [
                     'id' => $c->id,
                     'name' => $c->name,
                     'slug' => $c->slug,
-                    'image' => $c->image_path,
+                    'image' => MediaUrl::url($c->image_path),
                 ]),
                 'poems' => $poems->map(fn (Poem $p) => $this->poemCard($p)),
             ],
@@ -486,7 +487,7 @@ class DiscoverController extends Controller
             'id' => $a->id,
             'title' => $a->title,
             'slug' => $a->slug,
-            'artwork' => $a->artwork_path,
+            'artwork' => MediaUrl::url($a->artwork_path),
             'artist' => $a->musicGroup?->name
                 ?? ($a->artist?->stage_name ?: $a->artist?->name)
                 ?? $a->church?->name
@@ -503,7 +504,7 @@ class DiscoverController extends Controller
             'title' => $p->title,
             'slug' => $p->slug,
             'summary' => $p->summary,
-            'image' => $p->image_path,
+            'image' => MediaUrl::url($p->image_path),
             'author' => $p->displayAuthor(),
             'category' => $p->category?->name,
             'language' => $p->language?->name,
