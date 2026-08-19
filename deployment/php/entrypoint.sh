@@ -6,6 +6,13 @@ set -euo pipefail
 
 cd /var/www/html
 
+# Reset ownership on writable dirs. The named `app_storage` volume can retain
+# root-owned files from a previous container image, which blocks php-fpm
+# (www-data) from writing to the Laravel log or livewire-tmp on subsequent runs.
+if [ "$(id -u)" = "0" ]; then
+    chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+fi
+
 # Make sure the storage symlink is present (public/storage → storage/app/public).
 if [ ! -L public/storage ] || [ ! -e public/storage ]; then
     php artisan storage:link --force || true
