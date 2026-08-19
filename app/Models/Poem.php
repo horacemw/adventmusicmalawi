@@ -46,7 +46,7 @@ class Poem extends Model
         return LogOptions::defaults()
             ->logOnly(['title', 'status', 'is_featured', 'artist_id', 'church_id', 'category_id', 'published_at'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
+            ->dontLogEmptyChanges()
             ->useLogName('poem');
     }
 

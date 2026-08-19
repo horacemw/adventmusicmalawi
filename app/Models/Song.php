@@ -24,7 +24,7 @@ class Song extends Model
         return LogOptions::defaults()
             ->logOnly(['title', 'status', 'is_featured', 'artist_id', 'music_group_id', 'church_id', 'album_id', 'published_at'])
             ->logOnlyDirty()
-            ->dontSubmitEmptyLogs()
+            ->dontLogEmptyChanges()
             ->useLogName('song');
     }
 
