@@ -56,7 +56,7 @@ export default function TopBar() {
                         <div className="flex items-center gap-1 sm:gap-2">
                             <Link
                                 href="/login"
-                                className="hidden sm:inline text-sm font-medium text-slate-700 hover:text-ink px-3 py-1.5"
+                                className="text-sm font-medium text-slate-700 hover:text-ink px-2 sm:px-3 py-1.5 whitespace-nowrap"
                             >
                                 Sign in
                             </Link>

@@ -34,7 +34,7 @@ interface Props {
  */
 export default function FullscreenPlayer({ onClose }: Props) {
     const player = usePlayer();
-    const { isLiked, toggleLike } = useLikes();
+    const { isLiked, toggleLike, isAuthenticated } = useLikes();
     const song = player.current;
     const isLoading = player.status === 'loading';
     const hasError = player.status === 'error';
@@ -110,18 +110,20 @@ export default function FullscreenPlayer({ onClose }: Props) {
                             </Link>
                             <p className="text-base text-slate-600 truncate">{song.artist}</p>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => song && toggleLike({ id: song.id, slug: song.slug })}
-                            className={clsx(
-                                'shrink-0 transition-colors',
-                                liked ? 'text-brand-600 hover:text-brand-700' : 'text-slate-400 hover:text-brand-600',
-                            )}
-                            aria-label={liked ? 'Unlike' : 'Like'}
-                            aria-pressed={liked}
-                        >
-                            <Heart className="h-6 w-6" fill={liked ? 'currentColor' : 'none'} />
-                        </button>
+                        {isAuthenticated && (
+                            <button
+                                type="button"
+                                onClick={() => song && toggleLike({ id: song.id, slug: song.slug })}
+                                className={clsx(
+                                    'shrink-0 transition-colors',
+                                    liked ? 'text-brand-600 hover:text-brand-700' : 'text-slate-400 hover:text-brand-600',
+                                )}
+                                aria-label={liked ? 'Unlike' : 'Like'}
+                                aria-pressed={liked}
+                            >
+                                <Heart className="h-6 w-6" fill={liked ? 'currentColor' : 'none'} />
+                            </button>
+                        )}
                     </div>
 
                     {/* Scrubber */}
