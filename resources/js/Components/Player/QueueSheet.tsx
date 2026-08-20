@@ -1,5 +1,6 @@
 import { Music2, X } from 'lucide-react';
 import { usePlayer } from '@/Contexts/PlayerContext';
+import { useBackButtonClose } from '@/Hooks/useBackButtonClose';
 import PlayingIndicator from './PlayingIndicator';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
  */
 export default function QueueSheet({ onClose }: Props) {
     const player = usePlayer();
+
+    useBackButtonClose(onClose);
 
     return (
         <>

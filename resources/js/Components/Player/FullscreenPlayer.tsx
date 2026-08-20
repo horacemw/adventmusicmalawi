@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { usePlayer } from '@/Contexts/PlayerContext';
+import { useBackButtonClose } from '@/Hooks/useBackButtonClose';
 import { useLikes } from '@/Hooks/useLikes';
 import Scrubber from './Scrubber';
 import VolumeControl from './VolumeControl';
@@ -48,6 +49,9 @@ export default function FullscreenPlayer({ onClose }: Props) {
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [onClose]);
+
+    // Phone/browser back button should close this overlay, not leave the site.
+    useBackButtonClose(onClose);
 
     if (!song) return null;
 
@@ -116,7 +120,7 @@ export default function FullscreenPlayer({ onClose }: Props) {
                             aria-label={liked ? 'Unlike' : 'Like'}
                             aria-pressed={liked}
                         >
-                            <Heart className={clsx('h-6 w-6', liked && 'fill-current')} />
+                            <Heart className="h-6 w-6" fill={liked ? 'currentColor' : 'none'} />
                         </button>
                     </div>
 

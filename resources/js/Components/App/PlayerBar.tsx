@@ -94,7 +94,7 @@ export default function PlayerBar() {
                             aria-pressed={liked}
                             disabled={!hasSong}
                         >
-                            <Heart className={clsx('h-4 w-4', liked && 'fill-current')} />
+                            <Heart className="h-4 w-4" fill={liked ? 'currentColor' : 'none'} />
                         </button>
                     </div>
 

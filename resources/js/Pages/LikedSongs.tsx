@@ -25,7 +25,7 @@ export default function LikedSongs({ songs }: Props) {
             <div className="space-y-6">
                 <header className="flex flex-col md:flex-row md:items-end gap-5">
                     <div className="h-40 w-40 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-card shrink-0">
-                        <Heart className="h-16 w-16 text-white fill-white" />
+                        <Heart className="h-16 w-16 text-white" fill="currentColor" />
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">Your library</p>
@@ -128,7 +128,7 @@ export default function LikedSongs({ songs }: Props) {
                                             aria-label={liked ? 'Unlike' : 'Like'}
                                             aria-pressed={liked}
                                         >
-                                            <Heart className={clsx('h-4 w-4', liked && 'fill-current')} />
+                                            <Heart className="h-4 w-4" fill={liked ? 'currentColor' : 'none'} />
                                         </button>
                                     </li>
                                 );
