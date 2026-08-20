@@ -13,6 +13,7 @@ export type PageProps<
     auth: {
         user: User | null;
     };
+    likedSongIds?: number[];
 };
 
 export interface SongPayload {

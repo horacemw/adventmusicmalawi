@@ -10,6 +10,7 @@ import {
     Disc3,
     FileText,
     Flame,
+    Heart,
     HeartHandshake,
     Info,
     Mail,
@@ -50,6 +51,7 @@ const sections: NavSection[] = [
             { label: 'Churches', href: '/churches', icon: Church },
             { label: 'Poems', href: '/poems', icon: FileText },
             { label: 'Playlists', href: '/playlists', icon: Album },
+            { label: 'Liked Songs', href: '/liked-songs', icon: Heart },
         ],
     },
     {

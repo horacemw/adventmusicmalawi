@@ -136,7 +136,7 @@ export default function Dashboard(props: DashboardProps) {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <StatCard icon={ListMusic} label="Playlists" value={props.stats.playlists} href="/playlists" />
-                    <StatCard icon={Heart} label="Liked songs" value={props.stats.liked} href="/likes" />
+                    <StatCard icon={Heart} label="Liked songs" value={props.stats.liked} href="/liked-songs" />
                     <StatCard icon={Users2} label="Following" value={props.stats.following} href="/following" />
                     <StatCard icon={FilePlus2} label="Submissions" value={props.stats.submissions} href="/submissions" />
                 </div>

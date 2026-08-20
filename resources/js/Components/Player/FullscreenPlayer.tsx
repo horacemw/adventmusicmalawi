@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { usePlayer } from '@/Contexts/PlayerContext';
+import { useLikes } from '@/Hooks/useLikes';
 import Scrubber from './Scrubber';
 import VolumeControl from './VolumeControl';
 import QueueSheet from './QueueSheet';
@@ -32,10 +33,12 @@ interface Props {
  */
 export default function FullscreenPlayer({ onClose }: Props) {
     const player = usePlayer();
+    const { isLiked, toggleLike } = useLikes();
     const song = player.current;
     const isLoading = player.status === 'loading';
     const hasError = player.status === 'error';
     const canDownload = Boolean(song) && (song?.allow_download ?? true);
+    const liked = song ? isLiked(song.id) : false;
 
     // Close on Escape
     useEffect(() => {
@@ -105,10 +108,15 @@ export default function FullscreenPlayer({ onClose }: Props) {
                         </div>
                         <button
                             type="button"
-                            className="shrink-0 text-slate-400 hover:text-brand-600"
-                            aria-label="Favorite"
+                            onClick={() => song && toggleLike({ id: song.id, slug: song.slug })}
+                            className={clsx(
+                                'shrink-0 transition-colors',
+                                liked ? 'text-brand-600 hover:text-brand-700' : 'text-slate-400 hover:text-brand-600',
+                            )}
+                            aria-label={liked ? 'Unlike' : 'Like'}
+                            aria-pressed={liked}
                         >
-                            <Heart className="h-6 w-6" />
+                            <Heart className={clsx('h-6 w-6', liked && 'fill-current')} />
                         </button>
                     </div>
 

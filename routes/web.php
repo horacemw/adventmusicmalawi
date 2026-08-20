@@ -4,6 +4,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscoverController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\LikeController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
@@ -57,6 +58,12 @@ Route::get('/download/song/{song:slug}', [DownloadController::class, 'song'])
 // No auth requirement (anonymous listeners still generate valid streams);
 // session cookie is used to de-dupe counted streams within an hour.
 Route::post('/api/streams', [StreamController::class, 'store'])->name('streams.store');
+
+// Likes — liking is a low-friction action; email verification not required.
+Route::middleware('auth')->group(function () {
+    Route::get('/liked-songs', [LikeController::class, 'index'])->name('likes.index');
+    Route::post('/songs/{song:slug}/like', [LikeController::class, 'toggle'])->name('songs.like');
+});
 
 // Public playlist view — public/unlisted playlists visible without auth.
 // {playlist} constrained to digits so `/playlists/new` (below, auth-only) doesn't get

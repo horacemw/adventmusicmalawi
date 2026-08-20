@@ -125,6 +125,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         reported: false,
     });
 
+    // Always points to the latest handleTrackEnded. The audio "ended" listener is
+    // attached once on mount, so calling through this ref avoids a stale closure
+    // that would freeze `repeat`/`queue` at their initial values.
+    const handleTrackEndedRef = useRef<() => void>(() => {});
+
     // Initialize the single Audio element once
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -231,7 +236,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 analyticsRef.current.startedAt = 0;
             }
             reportStream(true);
-            handleTrackEnded();
+            handleTrackEndedRef.current();
         };
         const onError = () => {
             setStatus('error');
@@ -301,7 +306,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, [volume, muted]);
 
     // What happens when the current song finishes naturally.
-    const handleTrackEndedRef = useRef<() => void>(() => {});
     const handleTrackEnded = useCallback(() => {
         // Repeat one: replay the same track
         if (repeat === 'one' && current && audioRef.current) {

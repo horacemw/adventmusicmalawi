@@ -17,6 +17,7 @@ import {
     SkipForward,
 } from 'lucide-react';
 import { usePlayer } from '@/Contexts/PlayerContext';
+import { useLikes } from '@/Hooks/useLikes';
 import Scrubber from '@/Components/Player/Scrubber';
 import VolumeControl from '@/Components/Player/VolumeControl';
 import QueueSheet from '@/Components/Player/QueueSheet';
@@ -34,10 +35,12 @@ import MobileMiniPlayer from '@/Components/Player/MobileMiniPlayer';
  */
 export default function PlayerBar() {
     const player = usePlayer();
+    const { isLiked, toggleLike } = useLikes();
     const hasSong = !!player.current;
     const isLoading = player.status === 'loading';
     const hasError = player.status === 'error';
     const canDownload = hasSong && (player.current?.allow_download ?? true);
+    const liked = hasSong && player.current ? isLiked(player.current.id) : false;
 
     return (
         <>
@@ -82,11 +85,16 @@ export default function PlayerBar() {
                         </div>
                         <button
                             type="button"
-                            className="text-slate-400 hover:text-brand-600 transition-colors shrink-0"
-                            aria-label="Favorite"
+                            onClick={() => player.current && toggleLike({ id: player.current.id, slug: player.current.slug })}
+                            className={clsx(
+                                'transition-colors shrink-0',
+                                liked ? 'text-brand-600 hover:text-brand-700' : 'text-slate-400 hover:text-brand-600',
+                            )}
+                            aria-label={liked ? 'Unlike' : 'Like'}
+                            aria-pressed={liked}
                             disabled={!hasSong}
                         >
-                            <Heart className="h-4 w-4" />
+                            <Heart className={clsx('h-4 w-4', liked && 'fill-current')} />
                         </button>
                     </div>
 
