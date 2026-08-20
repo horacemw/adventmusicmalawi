@@ -25,6 +25,7 @@ export interface SongPayload {
     audio: string | null;
     streams: number;
     likes: number;
+    allow_download?: boolean;
     rank?: number | null;
 }
 

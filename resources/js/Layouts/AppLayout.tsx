@@ -4,7 +4,6 @@ import Sidebar from '@/Components/App/Sidebar';
 import MobileNav from '@/Components/App/MobileNav';
 import TopBar from '@/Components/App/TopBar';
 import PlayerBar from '@/Components/App/PlayerBar';
-import NowPlayingPanel from '@/Components/App/NowPlayingPanel';
 import FlashToaster from '@/Components/App/FlashToaster';
 import { PlayerProvider } from '@/Contexts/PlayerContext';
 import { MobileNavProvider } from '@/Contexts/MobileNavContext';
@@ -13,16 +12,13 @@ import type { SongPayload } from '@/types';
 interface Props {
     title?: string;
     children: ReactNode;
+    /** @deprecated retained for backwards compatibility; no longer rendered */
     rightPanel?: ReactNode;
+    /** @deprecated retained for backwards compatibility; no longer rendered */
     nowPlayingFallback?: SongPayload | null;
 }
 
-export default function AppLayout({
-    title,
-    children,
-    rightPanel,
-    nowPlayingFallback = null,
-}: Props) {
+export default function AppLayout({ title, children }: Props) {
     return (
         <MobileNavProvider>
             <PlayerProvider>
@@ -30,15 +26,10 @@ export default function AppLayout({
                 <div className="min-h-screen bg-surface-subtle text-ink">
                     <Sidebar />
                     <MobileNav />
-                    <div className="lg:pl-64 pb-24 sm:pb-28">
+                    <div className="lg:pl-64 pb-28 sm:pb-24">
                         <div className="mx-auto max-w-[1800px] px-4 md:px-6 lg:px-8">
                             <TopBar />
-                            <div className="flex gap-6">
-                                <main className="flex-1 min-w-0 pb-6">{children}</main>
-                                {rightPanel ?? (
-                                    <NowPlayingPanel fallback={nowPlayingFallback} />
-                                )}
-                            </div>
+                            <main className="pb-6">{children}</main>
                         </div>
                     </div>
                     <PlayerBar />

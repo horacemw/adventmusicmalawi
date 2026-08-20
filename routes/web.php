@@ -4,6 +4,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscoverController;
 use App\Http\Controllers\DownloadController;
+use App\Http\Controllers\StreamController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlaylistController;
@@ -51,6 +52,11 @@ Route::get('/settings', fn () => Inertia::render('Settings'))->name('settings');
 Route::get('/download/song/{song:slug}', [DownloadController::class, 'song'])
     ->middleware('auth')
     ->name('downloads.song');
+
+// Playback analytics — called by the persistent player after each listen.
+// No auth requirement (anonymous listeners still generate valid streams);
+// session cookie is used to de-dupe counted streams within an hour.
+Route::post('/api/streams', [StreamController::class, 'store'])->name('streams.store');
 
 // Public playlist view — public/unlisted playlists visible without auth.
 // {playlist} constrained to digits so `/playlists/new` (below, auth-only) doesn't get
